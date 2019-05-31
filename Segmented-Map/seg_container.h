@@ -31,12 +31,12 @@ std::pair<I, I> _insert_flat_front_back_available(I firstu, I lastu, I first, I 
 	IteratorDifferenceType<I> left = insert - first;
 	IteratorDifferenceType<I> right = last - insert;
 	if (left < right || (left == right && (first - firstu < lastu - last))) {
-		if constexpr (U) flat::slide_cut_n(first, left, n);
+		if constexpr (U) flat::slide_cut_n(first, left, static_cast<IteratorDifferenceType<I>>(n));
 		else			 flat::move_n(first, left, flat::predecessor(first, n));
 		return { flat::predecessor(first, n), last };
 	}
 	else {
-		if constexpr (U) flat::slide_cut_backward_n(last, right, n);
+		if constexpr (U) flat::slide_cut_backward_n(last, right, static_cast<IteratorDifferenceType<I>>(n));
 		else			 flat::move_backward_n(last, right, flat::successor(last, n));
 		return { first, flat::successor(last, n) };
 	}
@@ -1268,9 +1268,7 @@ template<typename T, std::size_t C, typename A = std::allocator<AreaType<big_seg
 using small_header_index = index<small_header_index_base<T, C, A>>;
 
 
-
-
-template<typename I, typename S, typename K, typename M>
+template<typename K, typename M, typename I, typename S>
 // I models SegmentIndex
 // S models BoundedSearch
 class container
@@ -1297,9 +1295,6 @@ private:
 	index in;
 	size_type size;
 	search sr;
-
-	bool is_end(const segment_coordinate& it) { return segment(it) == segment(end()); }
-	bool is_end(const const_segment_coordinate& it) const { return it._seg.h == std::cend(in); }
 
 	segment_iterator segment_iterator_from_const(const_segment_iterator it) {
 		return segment_iterator(flat::successor(std::begin(in), it.h - std::cbegin(in)));
@@ -1424,7 +1419,7 @@ public:
 	template<typename I>
 	// I models InnputIterator
 	// IteratorValueType<I> == value_type
-	std::pair<segment_coordinate, segment_coordinate> insert_move_range_unguarded(segment_coordinate it, I first, size_type n) {
+	std::pair<segment_coordinate, segment_coordinate> insert_move_range_unguarded(const_segment_coordinate it, I first, size_type n) {
 		return insert_move_range(coordinate_from_const(it), first, n);
 	}
 
@@ -1490,32 +1485,165 @@ public:
 
 template<typename Cmp>
 // Cmp models StrictWeakOrdering
+// Domain<Cmp> == K
 struct set_bounded_search
 {
 	Cmp cmp;
 
+	set_bounded_search(Cmp cmp) : cmp(cmp) {}
+
 	template<typename C>
 	// C models SegmentCoordinate
 	// Domain<Cmp> == IteratorValueType<C>
-	C lower_bound(C first, C last, const IteratorValueType<C>& x) {
-		return seg::lower_bound(first, last, x, cmp);
+	C lower_bound(C first, C last, const IteratorValueType<C>& key) {
+		return seg::lower_bound(first, last, key, cmp);
 	}
 
 	template<typename C>
 	// C models SegmentCoordinate
 	// Domain<Cmp> == IteratorValueType<C>
-	C upper_bound(C first, C last, const IteratorValueType<C>& x) {
-		return seg::upper_bound(first, last, x, cmp);
+	C upper_bound(C first, C last, const IteratorValueType<C>& key) {
+		return seg::upper_bound(first, last, key, cmp);
 	}
 
 	template<typename C>
 	// C models SegmentCoordinate
 	// Domain<Cmp> == IteratorValueType<C>
-	std::pair<C, C> equal_range(C first, C last, const IteratorValueType<C>& x) {
-		return seg::equal_range(first, last, x, cmp);
+	std::pair<C, C> equal_range(C first, C last, const IteratorValueType<C>& key) {
+		return seg::equal_range(first, last, key, cmp);
 	}
 };
 
+template<typename Cmp, typename K, typename M>
+// Cmp models StrictWeakOrdering
+// Domain<Cmp> == K
+struct map_pred_lower_bound
+{
+	Cmp cmp;
+	const K* x;
+
+	map_pred_lower_bound(Cmp cmp, const K& y) : cmp(cmp), x(x) {}
+	bool operator()(const std::pair<K, M>& y) const { return !cmp(y.first, *x); }
+};
+
+template<typename Cmp, typename K, typename M>
+// Cmp models StrictWeakOrdering
+// Domain<Cmp> == K
+struct map_pred_upper_bound
+{
+	Cmp cmp;
+	const K* x;
+
+	map_pred_upper_bound(Cmp cmp, const K& x) : cmp(cmp), x(x) {}
+	bool operator()(const std::pair<K, M>& y) const { return cmp(*x, y.first); }
+};
+
+
+template<typename Cmp, typename K, typename M>
+// Cmp models StrictWeakOrdering
+// Domain<Cmp> == K
+struct map_bounded_search
+{
+	using pred_lower_bound = map_pred_lower_bound<Cmp, K, M>;
+	using pred_upper_bound = map_pred_upper_bound<Cmp, K, M>;
+
+	Cmp cmp;
+
+	map_bounded_search(Cmp cmp) : cmp(cmp) {}
+
+	template<typename C>
+	// C models SegmentCoordinate
+	// IteratorValueType<C> == std::pair<K, M>
+	C lower_bound(C first, C last, const K& key) {
+		return seg::partition_point(first, last, pred_lower_bound(cmp, key));
+	}
+
+	template<typename C>
+	// C models SegmentCoordinate
+	// IteratorValueType<C> == std::pair<K, M>
+	C upper_bound(C first, C last, const K& key) {
+		return seg::partition_point(first, last, pred_upper_bound(cmp, key));
+	}
+
+	template<typename C>
+	// C models SegmentCoordinate
+	// IteratorValueType<C> == std::pair<K, M>
+	std::pair<C, C> equal_range(C first, C last, const K& key) {
+		C lower_bound = lower_bound(first, last, key);
+		C upper_bound = upper_bound(lower_bound, last, key);
+		return { lower_bound, upper_bound };
+	}
+};
+
+
+constexpr segment_size_t default_segment_capacity = 1024u;
+
+template<typename T>
+constexpr segment_size_t default_capacity_for_type() {
+	constexpr size = sizeof(T);
+	constexpr capacity = default_segment_capacity / size;
+	return capacity > 2 ? c : 2;
+}
+
+
+template<
+	typename K,
+	typename M,
+	typename Cmp,
+	typename I>
+using map_tmp = container<K, M, I, map_bounded_search<Cmp, K, M>>;
+
+template<
+	typename K,
+	typename M,
+	typename Cmp,
+	segment_size_t C,
+	typename A>
+using map_big_header = map_tmp<K, M, Cmp, big_header_index<std::pair<K, M>, C, A>>;
+
+template<
+	typename K,
+	typename M,
+	typename Cmp,
+	segment_size_t C,
+	typename A>
+using map_small_header = map_tmp<K, M, Cmp, small_header_index<std::pair<K, M>, C, A>>;
+
+template<
+	typename K,
+	typename M,
+	typename Cmp,
+	segment_size_t C = default_capacity_for_type<std::pair<K, M>>(),
+	typename A = std::allocator<std::pair<K, M>>>
+using map = map_big_header<K, M, Cmp, C, A>;
+
+template<
+	typename K,
+	typename Cmp,
+	typename I>
+using set_tmp = container<K, K, I, set_bounded_search<Cmp>>;
+
+template<
+	typename K,
+	typename Cmp,
+	segment_size_t C,
+	typename A>
+using set_big_header = set_tmp<K, Cmp, big_header_index<K, C, A>>;
+
+template<
+	typename K,
+	typename Cmp,
+	segment_size_t C,
+	typename A>
+using set_small_header = set_tmp<K, Cmp, small_header_index<K, C, A>>;
+
+
+template<
+	typename K,
+	typename Cmp,
+	segment_size_t C = default_capacity_for_type<K>(),
+	typename A = std::allocator<K>>
+using set = set_big_header<K, Cmp, C, A>;
 
 } // namespace seg
 
