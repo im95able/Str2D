@@ -125,7 +125,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="chunked_allocator.h" />
+    <ClInclude Include="pool_allocator.h" />
     <ClInclude Include="flat_algorithm.h" />
     <ClInclude Include="seg_algorithm.h" />
     <ClInclude Include="seg_container.h" />

@@ -22,7 +22,7 @@
     <ClInclude Include="utility.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="chunked_allocator.h">
+    <ClInclude Include="pool_allocator.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

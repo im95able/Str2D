@@ -131,7 +131,7 @@ template<typename I, typename N>
 // I models Iterator
 // N models Integer
 inline
-I successor(I it, N n = 1) {
+I successor(I it, N n) {
 	return std::next(it, static_cast<IteratorDifferenceType<I>>(n));
 }
 
@@ -139,7 +139,7 @@ template<typename I, typename N>
 // I models Iterator
 // N models Integer
 inline
-I predecessor(I it, N n = 1) {
+I predecessor(I it, N n) {
 	return std::prev(it, static_cast<IteratorDifferenceType<I>>(n));
 }
 
@@ -154,7 +154,7 @@ template<typename I0, typename I1, typename C>
 // InputType<C, 1> == IteratorValueType<I0>
 I1 _copy(I0 first0, I0 last0, I1 first1, C c) {
 	if constexpr (TriviallyCopyableMemory<I0, I1>::value) {
-		return flat::memmove(first0, last0, first1);
+		return std::copy(first0, last0, first1);
 	}
 	else {
 		while (first0 != last0) c(*first1++, *first0++);
@@ -173,7 +173,8 @@ template<typename I0, typename N, typename I1, typename C>
 // InputType<C, 1> == IteratorValueType<I0>
 std::pair<I0, I1> _copy_n(I0 first0, N n, I1 first1, C c) {
 	if constexpr (TriviallyCopyableMemory<I0, I1>::value) {
-		return flat::memmove_n(first0, n, first1);
+		std::copy_n(first0, n, first1);
+		return { flat::successor(first0, n), flat::successor(first1, n) };
 	}
 	else {
 		while (n > 0) {
@@ -194,7 +195,7 @@ template<typename I0, typename I1, typename C>
 // InputType<C, 1> == IteratorValueType<I0>
 I1 _copy_backward(I0 first0, I0 last0, I1 last1, C c) {
 	if constexpr (TriviallyCopyableMemory<I0, I1>::value) {
-		return flat::memmove_backward(first0, last0, last1);
+		return std::copy_backward(first0, last0, last1);
 	}
 	else {
 		while (first0 != last0) c(*--last1, *--last0);
@@ -213,7 +214,8 @@ template<typename I0, typename N, typename I1, typename C>
 // InputType<C, 1> == IteratorValueType<I0>
 std::pair<I0, I1> _copy_backward_n(I0 last0, N n, I1 last1, C c) {
 	if constexpr (TriviallyCopyableMemory<I0, I1>::value) {
-		return flat::memmove_backward_n(last0, n, last1);
+		I0 first0 = flat::predecessor(last0, n);
+		return { first0, flat::_copy_backward(first0, last0, last1, c) };
 	}
 	else {
 		while (n) {
@@ -235,7 +237,7 @@ template<typename I0, typename I1, typename C>
 inline
 I1 _cut(I0 first0, I1 last0, I1 first1, C c) {
 	if constexpr (TriviallyCopyableMemory<I0, I1>::value) {
-		return flat::memmove(first0, last0, first1);
+		return std::copy(first0, last0, first1);
 	}
 	else {
 		while (first0 != last0) {
@@ -258,7 +260,7 @@ template<typename I0, typename N, typename I1, typename C>
 inline
 std::pair<I0, I1> _cut_n(I0 first0, N n, I1 first1, C c) {
 	if constexpr (TriviallyCopyableMemory<I0, I1>::value) {
-		flat::memmove_n(first0, n, first1);
+		return std::copy_n(first0, n, first1);
 	}
 	else {
 		while (n > 0) {
@@ -282,7 +284,7 @@ template<typename I0, typename I1, typename C>
 // InputType<C, 1> == IteratorValueType<I0>
 I1 _cut_backward(I0 first0, I0 last0, I1 last1, C c) {
 	if constexpr (TriviallyCopyableMemory<I0, I1>::value) {
-		return flat::memmove_backward(first0, last0, last1);
+		return std::copy_backward(first0, last0, last1);
 	}
 	else {
 		while (first0 != last0) {
@@ -304,7 +306,8 @@ template<typename I0, typename N, typename I1, typename C>
 // InputType<C, 1> == IteratorValueType<I0>
 std::pair<I0, I1> _cut_backward_n(I0 last0, N n, I1 last1, C c) {
 	if constexpr (TriviallyCopyableMemory<I0, I1>::value) {
-		return flat::memmove_backward_n(last0, n, last1);
+		I0 first0 = flat::predecessor(last0, n);
+		return { first0, flat::_cut_backward(first0, last0, last1, c) };
 	}
 	else {
 		while (n) {
@@ -543,16 +546,16 @@ template<typename I, typename N0, typename N1>
 inline
 void slide_cut_n(I first, N0 n, N1 move) {
 	if constexpr(TriviallyCopyableMemory<I, I>::value) {
-		flat::memmove_n(first, n, first - move);
+		std::copy_n(first, n, flat::predecessor(first, move));
 	}
 	else {
 		if (n <= move) {
-			flat::cut_n_uninitialized(first, n, first - move);
+			flat::cut_n_uninitialized(first, n, flat::predecessor(first, move));
 		}
 		else {
-			flat::move_n_uninitialized(first, move, first - move);
-			flat::move_n(first + move, n - move, first);
-			flat::destruct_n(first + n - move, move);
+			flat::move_n_uninitialized(first, move, flat::predecessor(first, move));
+			flat::move_n(flat::successor(first, move), n - move, first);
+			flat::destruct_n(flat::successor(first, n - move), move);
 		}
 	}
 }
@@ -564,34 +567,51 @@ template<typename I, typename N0, typename N1>
 inline
 void slide_cut_backward_n(I last, N0 n, N1 move) {
 	if constexpr(TriviallyCopyableMemory<I, I>::value) {
-		flat::memmove_backward_n(last, n, last + move);
+		std::copy_backward(flat::predecessor(last, n), last, flat::successor(last, move));
 	}
 	else {
 		if (n <= move) {
-			flat::cut_backward_n_uninitialized(last, n, last + move);
+			flat::cut_backward_n_uninitialized(last, n, flat::successor(last, move));
 		}
 		else {
-			flat::move_backward_n_uninitialized(last, move, last + move);
-			flat::move_backward_n(last - move, n - move, last);
-			flat::destruct_backward_n(last - n + move, move);
+			flat::move_backward_n_uninitialized(last, move, flat::successor(last, move));
+			flat::move_backward_n(flat::predecessor(last, move), n - move, last);
+			flat::destruct_backward_n(flat::predecessor(last, n - move), move);
 		}
 	}
 }
 
 
-template<typename I0, typename N, typename I1, typename P>
+template<typename I0, typename N, typename I1, typename Cmp>
 // I0 models InputIterator
 // N models Integer
 // I1 models InputIterator
-// P models EquivalenceRelation
-// Domain<P> == ValueType<I0> == ValueType<I1>
-std::tuple<I0, N, I1> equal_n(I0 first0, N n, I1 first1, P p) {
-	while (n && p(*first0, *first1)) {
+// Cmp models StrictWeakOrdering
+// Domain<Cmp> == ValueType<I0> == ValueType<I1>
+int compare_n(I0 first0, N n, I1 first1, Cmp cmp) {
+	while (n) {
+		if (cmp(*first0, *first1)) return -1;
+		if (cmp(*first1, *first0)) return 1;
 		++first0;
 		++first1;
 		--n;
 	}
-	return { first0, n , first1 };
+	return 0;
+}
+
+template<typename I0, typename I1, typename Cmp>
+// I0 models InputIterator
+// I1 models InputIterator
+// Cmp models StrictWeakOrdering
+// Domain<Cmp> == ValueType<I0> == ValueType<I1>
+int compare(I0 first0, I0 last0, I1 first1, Cmp cmp) {
+	while (first0 != last0) {
+		if (cmp(*first0, *first1)) return -1;
+		if (cmp(*first1, *first0)) return 1;
+		++first0;
+		++first1;
+	}
+	return 0;
 }
 
 template<typename I0, typename N, typename I1>
@@ -599,8 +619,45 @@ template<typename I0, typename N, typename I1>
 // N models Integer
 // I1 models InputIterator
 // ValueType<I0> == ValueType<I1>
-std::tuple<I0, N, I1> equal_n(I0 first0, N n, I1 first1) {
-	return flat::equal_n(first0, n, first1, equal_to());
+int compare_n(I0 first0, N n, I1 first1) {
+	return compare_n(first0, n, first1, std::less<>());
+}
+
+template<typename I0, typename I1>
+// I0 models InputIterator
+// I1 models InputIterator
+// ValueType<I0> == ValueType<I1>
+int compare(I0 first0, I0 last0, I1 first1) {
+	return compare(first0, last0, first1, std::less<>());
+}
+
+template<typename I0, typename N, typename I1, typename P>
+// I0 models InputIterator
+// N models Integer
+// I1 models InputIterator
+// P models EquivalenceRelation
+// Domain<P> == ValueType<I0> == ValueType<I1>
+bool equal_n(I0 first0, N n, I1 first1, P p) {
+	if constexpr (std::is_pointer_v<I0> && std::is_pointer_v<I1>) {
+		return std::equal(first0, flat::successor(first0, n), first1, p);
+	}
+	else {
+		while (n && p(*first0, *first1)) {
+			++first0;
+			++first1;
+			--n;
+		}
+		return n == 0;
+	}
+}
+
+template<typename I0, typename N, typename I1>
+// I0 models InputIterator
+// N models Integer
+// I1 models InputIterator
+// ValueType<I0> == ValueType<I1>
+bool equal_n(I0 first0, N n, I1 first1) {
+	return flat::equal_n(first0, n, first1, std::equal_to<>());
 }
 
 template<typename I0, typename I1, typename P>
@@ -608,13 +665,18 @@ template<typename I0, typename I1, typename P>
 // I1 models InputIterator
 // P models EquivalenceRelation
 // Domain<P> == ValueType<I0> == ValueType<I1>
-std::pair<I0, I1> equal(I0 first0, I0 last0, I1 first1, P p) {
-	while (first0 != last0) {
-		if (!p(*first0, *first1)) return { first0, last0 };
-		++first0;
-		++first1;
+bool equal(I0 first0, I0 last0, I1 first1, P p) {
+	if constexpr (std::is_pointer_v<I0> && std::is_pointer_v<I1>) {
+		return std::equal(first0, last0, first1, p);
 	}
-	return { first0, first1 };
+	else {
+		while (first0 != last0) {
+			if (!p(*first0, *first1)) return { first0, last0 };
+			++first0;
+			++first1;
+		}
+		return first0 == last0;
+	}
 }
 
 template<typename I0, typename I1>
@@ -622,8 +684,8 @@ template<typename I0, typename I1>
 // I1 models InputIterator
 // ValueType<I0> == ValueType<I1>
 // ValueType<I0> models Regular
-std::tuple<I0, I1> equal(I0 first0, I0 last0, I1 first1) {
-	return flat::equal(first0, last0, first1, equal_to());
+bool equal(I0 first0, I0 last0, I1 first1) {
+	return flat::equal(first0, last0, first1, std::equal_to<>());
 }
 
 

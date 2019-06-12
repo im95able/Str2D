@@ -29,6 +29,11 @@ namespace test
 
 using value_type = int;
 
+inline
+int value_of(value_type v) {
+	return v;
+}
+
 #else
 
 struct instrumented_base
@@ -144,6 +149,12 @@ const char* instrumented_base::counter_names[number_ops] = {
 
 using value_type = instrumented<int>;
 
+inline
+int value_of(value_type v) {
+	return v.value;
+}
+
+
 #endif // SEG_POD_TEST
 
 static constexpr size_t capacity = 100;
@@ -179,21 +190,21 @@ const char* allocator_base::counter_names[number_ops] = {
 
 #ifdef CHUNKED_ALLOCATOR_TEST
 
-#include "..\Segmented-Map\chunked_allocator.h"
+#include "..\Segmented-Map\pool_allocator.h"
 
 struct allocator : allocator_base
 {
-	chunked_block_allocator alloc;
+	pool_allocator alloc;
 
 	allocator() : alloc(sizeof(area), 20, false) {}
 
 	area* allocate(size_t n) {
 		++counts[allocation];
-		return static_cast<area*>(alloc.allocate_block());
+		return static_cast<area*>(alloc.allocate());
 	}
 	void deallocate(area* a, size_t n) {
 		++counts[deallocation];
-		return alloc.deallocate_block(static_cast<void*>(a));
+		return alloc.deallocate(static_cast<void*>(a));
 	}
 };
 
@@ -222,11 +233,14 @@ using index = seg::small_header_index<value_type, capacity, allocator>;
 #endif
 using header_iterator = Iterator<index>;
 using const_header_iterator = ConstIterator<index>;
-using flat_iterator = value_type*;
-using segment_iterator = seg::segment_iterator<header_iterator>;
-using const_segment_iterator = seg::const_segment_iterator<header_iterator, const_header_iterator>;
-using segment_coordinate = seg::segment_coordinate<segment_iterator, const_segment_iterator>;
-using iterator = Iterator<std::vector<value_type>>;
+using multiset = seg::multiset_tmp<value_type, std::less<value_type>, index>;
+using const_segment_coordinate = typename multiset::const_segment_coordinate;
+using segment_coordinate = typename multiset::segment_coordinate;
+using segment_iterator = typename segment_coordinate::segment_iterator;
+using const_segment_iterator = typename segment_coordinate::const_segment_iterator;
+using flat_iterator = typename segment_iterator::flat_iterator;
+using iterator = typename std::vector<value_type>::iterator;
+using const_iterator = typename std::vector<value_type>::const_iterator;
 
 static std::default_random_engine rand_engine(static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count()));
 
@@ -413,7 +427,27 @@ void destroy_segment(header& h) {
 }
 
 
-struct TestBase : public testing::Test
+void check_construction_and_destruction() {
+#ifndef SEG_POD_TEST
+	check_equal(
+		instrumented_base::counts[instrumented_base::constructor],
+		instrumented_base::counts[instrumented_base::destructor],
+		"More objects were destructed than constructed",
+		"More objects were constructed than destructed"
+	);
+#endif
+}
+
+void check_allocation_and_deallocation() {
+	check_equal(
+		allocator_base::counts[allocator_base::allocation],
+		allocator_base::counts[allocator_base::deallocation],
+		"More areas were deallocated than allocated",
+		"More areas were allocated than deallocated"
+	);
+}
+
+struct InternalTestBase : public testing::Test
 {
 	virtual void SetUpSeg() {}
 	virtual void TearDownSeg() {}
@@ -431,26 +465,13 @@ struct TestBase : public testing::Test
 	void TearDown() override {
 		TearDownSeg();
 
-		check_equal(
-			allocator_base::counts[allocator_base::allocation],
-			allocator_base::counts[allocator_base::deallocation],
-			"More areas were deallocated than allocated",
-			"More areas were allocated than deallocated"
-		);
-
-#ifndef SEG_POD_TEST
-		check_equal(
-			instrumented_base::counts[instrumented_base::constructor],
-			instrumented_base::counts[instrumented_base::destructor],
-			"More objects were destructed than constructed",
-			"More objects were constructed than destructed"
-		);
-#endif
+		check_allocation_and_deallocation();
+		check_construction_and_destruction();
 	}
 };
 
-#ifdef SEG_CONTAINER_FLAT_INSERT_TEST
-struct TestInsertFlat : public TestBase
+#ifdef INTERNAL_FLAT_INSERT_TEST
+struct TestInsertFlat : public InternalTestBase
 {
 	using iterator = Iterator<std::vector<value_type>>;
 
@@ -477,14 +498,14 @@ struct TestInsertFlat : public TestBase
 
 		v0.resize(capacity);
 	
-		size_t init_size = _last_init_index - _first_init_index;
+		int init_size = static_cast<int>(_last_init_index - _first_init_index);
 		first_init = v0.begin() + _first_init_index;
 		last_init = v0.begin() + _last_init_index;
 		insert_at = _insert_at;
 		insert_nm = _insert_nm;
 		std::fill(v0.begin(), first_init, value_type(capacity));
 		std::fill(last_init, v0.end(), value_type(capacity));
-		for (size_t i = 0; i < init_size; ++i) *(first_init + i) = value_type(i);
+		for (int i = 0; i < init_size; ++i) *(first_init + i) = value_type(i);
 
 		v1 = std::vector(first_init, last_init);
 		std::tie(_first_init, _last_init) = insert_flat(v0.begin(), v0.end(), first_init, last_init, first_init + insert_at, insert_nm);
@@ -599,14 +620,14 @@ TEST_F(TestInsertFlat, FrontBackAvailableCombined)
 	ASSERT_EQ(_last_init - _first_init, (last_init - first_init) + insert_nm) <<
 		"New range doesn't have the correct size";
 }
-#endif // SEG_CONTAINER_FLAT_INSERT_TEST
+#endif // INTERNAL_FLAT_INSERT_TEST
 
 
 
 
-#ifdef SEG_CONTAINER_FLAT_ERASE_TEST
+#ifdef INTERNAL_FLAT_ERASE_TEST
 
-struct TestEraseFlat : public TestBase
+struct TestEraseFlat : public InternalTestBase
 {
 	static std::vector<value_type> v0;
 	static std::vector<value_type> v1;
@@ -630,10 +651,10 @@ struct TestEraseFlat : public TestBase
 
 		erase_nm = _erase_nm;
 		erase_at = _erase_at;
-		size_t init_size = _last_init_index - _first_init_index;
+		int init_size = static_cast<int>(_last_init_index - _first_init_index);
 		v0.resize(init_size);
 		first = v0.begin();
-		for (size_t i = 0; i < init_size; ++i) *(first + i) = value_type(i);
+		for (int i = 0; i < init_size; ++i) *(first + i) = value_type(i);
 		v1 = std::vector(first, v0.end());
 		iterator firste = first + _erase_at;
 		iterator laste = firste + _erase_nm;
@@ -689,13 +710,13 @@ TEST_F(TestEraseFlat, Erase)
 	}
 }
 
-#endif // SEG_CONTAINER_FLAT_ERASE_TEST
+#endif // INTERNAL_FLAT_ERASE_TEST
 
 
 
-#ifdef SEG_CONTAINER_SEGMENT_SLIDE_TEST
+#ifdef INTERNAL_SEGMENT_SLIDE_TEST
 
-struct TestSegmentSlide : public TestBase
+struct TestSegmentSlide : public InternalTestBase
 {
 	header h;
 	static std::vector<value_type> v;
@@ -755,13 +776,13 @@ TEST_F(TestSegmentSlide, SlideBackward)
 }
 
 
-#endif // SEG_CONTAINER_SEGMENT_SLIDE_TEST
+#endif // INTERNAL_SEGMENT_SLIDE_TEST
 
 
-#ifdef SEG_CONTAINER_SEGMENT_MOVE_TEST
+#ifdef INTERNAL_SEGMENT_MOVE_TEST
 
 
-struct TestSegmentMove : public TestBase
+struct TestSegmentMove : public InternalTestBase
 {
 	static std::vector<value_type> v0;
 	static std::vector<value_type> v1;
@@ -782,7 +803,7 @@ struct TestSegmentMove : public TestBase
 		destroy_segment(h1);
 	}
 
-	void _InitHeaderAndContainer(header& h, std::vector<value_type>& v, segment_size_t _first_init_index, segment_size_t _last_init_index) {
+	void _InitHeaderAndContainer(header& h, std::vector<value_type>& v, size_t _first_init_index, size_t _last_init_index) {
 		create_segment_with_allocation(h, _first_init_index, _last_init_index);
 		v = std::vector<value_type>(seg::begin(h), seg::end(h));
 	}
@@ -1003,13 +1024,13 @@ TEST_F(TestSegmentMove, MoveToRightEmpty)
 }
 
 
-#endif // SEG_CONTAINER_SEGMENT_MOVE_TEST
+#endif // INTERNAL_SEGMENT_MOVE_TEST
 
 
 
-#ifdef SEG_CONTAINER_INDEX_TEST
+#ifdef INTERNAL_INDEX_TEST
 
-struct TestIndex : public TestBase
+struct TestIndex : public InternalTestBase
 {
 	static index in;
 	static std::vector<header> v;
@@ -1087,13 +1108,15 @@ TEST_F(TestIndex, Erase) {
 index TestIndex::in;
 std::vector<header> TestIndex::v;
 
-#endif // SEG_CONTAINER_INDEX_TEST
+#endif // INTERNAL_INDEX_TEST
 
 
 #define MEMORY_OVERFLOW_BUG
 
-#if defined(SEG_CONTAINER_SEGMENTED_INSERT_TEST) || defined(SEG_CONTAINER_SEGMENTED_ERASE_TEST)
-struct TestSegmentRangeBase : public TestBase
+
+#if defined(INTERNAL_SEGMENTED_INSERT_TEST) || defined(INTERNAL_SEGMENTED_ERASE_TEST)
+
+struct TestSegmentRangeBase : public InternalTestBase
 {
 	static std::vector<value_type> v;
 	static index in;
@@ -1151,9 +1174,11 @@ std::vector<value_type> TestSegmentRangeBase::v;
 segment_coordinate TestSegmentRangeBase::first_inserted;
 segment_coordinate TestSegmentRangeBase::last_inserted;
 
-#endif
+#endif 
 
-#ifdef SEG_CONTAINER_SEGMENTED_INSERT_TEST 
+
+
+#ifdef INTERNAL_SEGMENTED_INSERT_TEST 
 
 
 struct TestSegmentInsert : public TestSegmentRangeBase
@@ -1186,17 +1211,15 @@ struct TestSegmentInsert : public TestSegmentRangeBase
 
 		size_t left_size = seg::distance(begin(), first);
 
-		auto [v_it, n, c] = seg::equal_flat_n_seg(v.begin(), left_size, begin(), first);
-		ASSERT_TRUE(n == 0 && c == first) <<
+		ASSERT_TRUE(seg::equal_flat_n_seg(v.begin(), left_size, begin(), first)) <<
 			"Left range is no longer the same";
 
-		std::tie(v_it, n, c) = seg::equal_flat_n_seg(flat::successor(v.begin(), left_size), static_cast<size_t>(v.size()) - left_size, last, end());
-		ASSERT_TRUE(n == 0 && c == end()) <<
+		ASSERT_TRUE(seg::equal_flat_n_seg(flat::successor(v.begin(), left_size), static_cast<size_t>(v.size()) - left_size, last, end())) <<
 			"Right range is no longer the same";
 	}
 
 	void TestRangeInsertedCorrectly(
-		pair2<header_iterator, segment_size_t> r,
+		pair2<header_iterator, size_t> r,
 		size_t insert_nm,
 		header_iterator first_balance,
 		header_iterator last_balance) {
@@ -1210,7 +1233,7 @@ struct TestSegmentInsert : public TestSegmentRangeBase
 	}
 
 	void TestRangeInsertedCorrectly(
-		pair2<header_iterator, segment_size_t> r,
+		pair2<header_iterator, size_t> r,
 		size_t insert_nm) {
 
 		TestRangeInsertedCorrectly(r, insert_nm, in.end(), in.end());
@@ -1278,7 +1301,7 @@ TEST_F(TestSegmentInsert, InsertBalanceLeftIncreaseEmpty)
 
 	auto [nm_segments, m, s] = seg::segment_range_info(capacity, 0, seg::size(*right()), insert_nm);
 	header_iterator first = in.insert(right(), nm_segments - 1);
-	std::pair<header_iterator, segment_size_t> p = seg::insert_balance_left_increase_empty(first, right(), m, s, insert_nm);
+	std::pair<header_iterator, size_t> p = seg::insert_balance_left_increase_empty(first, right(), m, s, insert_nm);
 	segment_iterator it(p.first);
 
 	TestRangeInsertedCorrectly(
@@ -1388,11 +1411,11 @@ TEST_F(TestSegmentInsert, Insert)
 		insert_nm);
 }
 
-#endif // SEG_CONTAINER_SEGMENTED_INSERT_TEST
+#endif // INTERNAL_SEGMENTED_INSERT_TEST
 
 
 
-#ifdef SEG_CONTAINER_SEGMENTED_ERASE_TEST
+#ifdef INTERNAL_SEGMENTED_ERASE_TEST
 
 struct TestSegmentErase : public TestSegmentRangeBase
 {
@@ -1408,29 +1431,11 @@ struct TestSegmentErase : public TestSegmentRangeBase
 		ASSERT_LE(erase_pos, end()) <<
 			"Erase pos is after the ending of the range";
 
-		auto[it, n, c] = seg::equal_flat_n_seg(v.begin(), left_size, begin(), erase_pos);
-		if (n > 0) {
-			ASSERT_EQ(c, erase_pos) <<
-				"Left range is not the same as before";
-			ASSERT_TRUE(false) <<
-				"Left range is smaller than it should be";
-		}
-		else {
-			ASSERT_EQ(c, erase_pos) <<
-				"Left range is larger than it should be";
-		}
+		ASSERT_TRUE(seg::equal_flat_n_seg(v.begin(), left_size, begin(), erase_pos)) <<
+			"Left range is not the same as before";
 
-		std::tie(it, n, c) = seg::equal_flat_n_seg(v.end() - right_size, right_size, erase_pos, end());
-		if (n > 0) {
-			ASSERT_EQ(c, end()) <<
-				"Right range is not the same as before";
-			ASSERT_TRUE(false) <<
-				"Right range is smaller than it should be";
-		}
-		else {
-			ASSERT_EQ(c, end()) <<
-				"Right range is larger than it should be";
-		}
+		ASSERT_TRUE(seg::equal_flat_n_seg(v.end() - right_size, right_size, erase_pos, end())) <<
+			"Right range is not the same as before";
 	}
 
 	void TestRangeErasedCorrectly(
@@ -1464,9 +1469,9 @@ TEST_F(TestSegmentErase, Erase)
 	segment_coordinate last_erase = seg::successor(first_erase, erase_nm);
 
 	header_iterator _first_erase = seg::segment(first_erase).h;
-	segment_size_t _first_i = seg::flat(first_erase) - seg::begin(*_first_erase);
+	size_t _first_i = seg::flat(first_erase) - seg::begin(*_first_erase);
 	header_iterator _last_erase;
-	segment_size_t _last_i;
+	size_t _last_i;
 
 	if (last_erase == end() && begin() != end()) {
 		_last_erase = --seg::segment(last_erase).h;
@@ -1481,8 +1486,258 @@ TEST_F(TestSegmentErase, Erase)
 }
 
 
-#endif // SEG_CONTAINER_SEGMENTED_ERASE_TEST
+#endif // INTERNAL_SEGMENTED_ERASE_TEST
 
+
+#ifdef INTERNAL_SEARCH_TEST
+
+struct TestSegmentContainerSearch : public InternalTestBase
+{
+	static multiset set;
+
+	void SetUpSeg() override {
+	}
+
+	void TearDownSeg() override {
+		set.clear();
+	}
+
+	void InitRand(size_t nm_segments) {
+		index in;
+		in.insert(in.begin(), static_cast<SizeType<index>>(nm_segments));
+		size_t s = create_rand_range(in.begin(), nm_segments);
+		set.swap(in, s);
+	}
+};
+
+multiset TestSegmentContainerSearch::set;
+
+TEST_F(TestSegmentContainerSearch, LowerBound)
+{
+	InitRand(rand(10));
+	int size = static_cast<int>(set.size());
+	segment_coordinate end = set.end();
+	for (int i = 0; i < size; ++i) {
+		segment_coordinate c = set.lower_bound(value_type(i));
+		ASSERT_NE(c, end) << 
+			"LowerBound was not found";
+		ASSERT_GE(*c, value_type(i)) <<
+			"Lesser element than LowerBound was found";
+		ASSERT_EQ(*c, value_type(i)) <<
+			"Greater element than LowerBound was found";
+	}
+}
+
+TEST_F(TestSegmentContainerSearch, UpperBound)
+{
+	InitRand(10);
+	int size = static_cast<int>(set.size());
+	segment_coordinate end = set.end();
+	for (int i = 0; i < size; ++i) {
+		segment_coordinate c = set.upper_bound(value_type(i));
+		if (i != size - 1) {
+			ASSERT_NE(c, end) <<
+				"UpperBound was not found";
+			ASSERT_GE(*c, value_type(i + 1)) <<
+				"Lesser element than UpperBound was found";
+			ASSERT_EQ(*c, value_type(i + 1)) <<
+				"Greater element than UpperBound was found";
+		}
+		else {
+			ASSERT_EQ(c, end) <<
+				"UpperBound was not found";
+		}
+	}
+}
+
+TEST_F(TestSegmentContainerSearch, EqualRange)
+{
+	InitRand(10);
+	int size = static_cast<int>(set.size());
+	segment_coordinate end = set.end();
+	for (int i = 0; i < size; ++i) {
+		auto [lb, ub] = set.equal_range(value_type(i));
+		ASSERT_NE(lb, end) <<
+			"LowerBound was not found";
+		ASSERT_GE(*lb, value_type(i)) <<
+			"Lesser element than LowerBound was found";
+		ASSERT_EQ(*lb, value_type(i)) <<
+			"Greater element than LowerBound was found";
+
+		if (i != size - 1) {
+			ASSERT_GE(*ub, value_type(i + 1)) <<
+				"Lesser element than UpperBound was found";
+			ASSERT_EQ(*ub, value_type(i + 1)) <<
+				"Greater element than UpperBound was found";
+		}
+		else {
+			ASSERT_EQ(ub, end) <<
+				"UpperBound was not found";
+		}
+	}
+}
+
+#endif
+
+#ifdef EXTERNAL_COMPLETE_TEST
+
+
+struct equal_to
+{
+	value_type x;
+	equal_to(value_type x) : x(x) {}
+
+	bool operator()(const value_type& y) const { return y == x; }
+};
+
+void check_equal_range(
+	value_type x,
+	const_segment_coordinate seg_first, 
+	const_segment_coordinate seg_lb,
+	const_segment_coordinate seg_up,
+	const_iterator first, 
+	const_iterator lb,
+	const_iterator ub)
+{
+	const_segment_coordinate _seg_lb = seg::find_if_not(seg_lb, seg_up, equal_to(x));
+	ASSERT_EQ(_seg_lb, seg_up) <<
+		"Not all elements in the range [lower bound, upper bound) are equivalent";
+
+	ASSERT_EQ(seg::distance(seg_first, seg_lb), lb - first) <<
+		"Equivalent is not in the right positions";
+
+	check_equal(
+		seg::distance(seg_lb, seg_up),
+		ub - lb,
+		"Equivalent range is smaller than it should be",
+		"Equivalent range is larger than it should be");
+}
+
+void non_decreasing_range(iterator first, iterator last, int lower_bound, int upper_bound)
+{
+	if (first == last || upper_bound == lower_bound)
+		return;
+
+	int value_range = upper_bound - lower_bound;
+	int range_size = static_cast<int>(last - first);
+	if (range_size > value_range) {
+		int section_size = range_size / value_range;
+		int last_section_size = section_size + range_size % value_range;
+		int i = 0;
+		while (i < value_range - 1) {
+			first = std::fill_n(first, section_size, value_type(lower_bound + i));
+			++i;
+		}
+		std::fill_n(first, last_section_size, value_type(lower_bound + i));
+	}
+	else {
+		int step_size = value_range / range_size;
+		int value = lower_bound;
+		for (int i = 0; i < range_size; ++i) {
+			*first = value_type(value);
+			value += step_size;
+			++first;
+		}
+	}
+}
+
+struct greater_than
+{
+	value_type x;
+	greater_than(const value_type& x) : x(x) {}
+
+	bool operator()(const value_type& y) { return y > x; }
+};
+
+static constexpr size_t max_value = 1000000;
+
+struct TestSegmentContainerUsage : public InternalTestBase
+{
+	static multiset set;
+	static std::vector<value_type> v;
+
+	void CheckEqualContainers() {
+		check_equal(
+			set.size(),
+			v.size(),
+			"Segmented set is smaller than it should be",
+			"Segmented set is larger than it should be");
+
+		auto low_bound = std::begin(v);
+
+		while (low_bound != std::end(v)) {
+			auto up_bound = std::upper_bound(low_bound, std::end(v), *low_bound);
+			auto x = set.equal_range(*low_bound);
+			check_equal_range(*low_bound, std::begin(set), x.first, x.second, std::begin(v), low_bound, up_bound);
+			low_bound = up_bound;
+		}
+	}
+
+	void TearDownSeg() override {
+		v.clear();
+		set.clear();
+	}
+
+	void InitRand(size_t min_size, size_t max_size, int min_value, int max_value) {
+		size_t size = rand(min_size, max_size);
+		v.resize(size);
+		non_decreasing_range(v.begin(), v.end(), min_value, max_value);
+		set.insert_range_unguarded(set.begin(), v.begin(), v.size());
+	}
+
+	void EraseRand() {
+		size_t erase_nm = rand(set.size());
+		size_t erase_index = rand(0, set.size() - erase_nm);
+		segment_coordinate first = seg::successor(set.begin(), erase_index);
+		set.erase(first, seg::successor(first, erase_nm));
+		v.erase(flat::successor(v.begin(), erase_index), flat::successor(v.begin(), erase_index + erase_nm));
+	}
+
+	void InsertRand() {
+		static constexpr size_t max_insert_nm = 500;
+
+		if (!set.empty()) {
+			size_t insert_nm = rand(max_insert_nm);
+			size_t insert_index = rand(set.size());
+			auto it = flat::successor(v.begin(), insert_index);
+			int max = max_value;
+			if (it != v.end()) {
+				it = std::lower_bound(v.begin(), v.end(), *it);
+				max = value_of(*it);
+			}
+			int min = it == v.begin() ? 0 : value_of(*(it - 1));
+			it = v.insert(it, insert_nm, value_type(0));
+			non_decreasing_range(it, flat::successor(it, insert_nm), min, max);
+			set.insert_range_unguarded(seg::successor(set.begin(), it - v.begin()), it, insert_nm);
+		}
+		else {
+			InitRand(1000, 2000, 0, static_cast<int>(rand(0, max_value)));
+		}
+	}
+
+};
+
+multiset TestSegmentContainerUsage::set;
+std::vector<value_type> TestSegmentContainerUsage::v;
+
+TEST_F(TestSegmentContainerUsage, Usage)
+{
+	InitRand(1000, 2000, 0, static_cast<int>(rand(0, max_value)));
+
+	for (int i = 0; i < 100; ++i) {
+		size_t r = rand(1);
+		if (r == 0) {
+			InsertRand();
+		}
+		else {
+			EraseRand();
+		}
+		CheckEqualContainers();
+	}
+
+}
+
+#endif
 
 } // namespace test
 

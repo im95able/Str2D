@@ -1108,15 +1108,24 @@ void erase_headers_and_deallocate_areas(
 	std::tie(used_first, used_last, firste) = erase_flat(used_first, used_last, firste, laste);
 }
 
+template<typename C>
+// C models SegmentHeaderContainer
+inline
+std::pair<Iterator<C>, Iterator<C>> middle_edges(C& index_container) {
+	Iterator<C> edge_left = flat::successor(index_container.begin(), (index_container.size() >> 1) - 1);
+	return { edge_left, flat::successor(edge_left, 1) };
+}
 
-
-template<typename H, typename A>
-// H models SegmentHeader
+// Data structure responsible for holding all "segment headers" and allocating and deallocating
+// "segment areas".
+template<typename T, std::size_t C, typename A>
+// T models
 // A models Allocator
-// ValueType<A> == ValueType<H>
-struct index_types_base
+// ValueType<A> == T
+class big_header_index
 {
-	using header_type = H;
+public:
+	using header_type = big_segment_header<T, C>;
 	using value_type = ValueType<header_type>;
 	using area_type = AreaType<header_type>;
 	using container = std::vector<header_type>;
@@ -1127,76 +1136,71 @@ struct index_types_base
 	using size_type = SizeType<container>;
 	using allocator = A;
 	constexpr static size_t segment_capacity = header_type::capacity;
-};
 
-template<typename T, std::size_t C, typename A>
-struct big_header_index_base : public index_types_base<big_segment_header<T, C>, A>
-{
-	using base = index_types_base<big_segment_header<T, C>, A>;
-	typename base::container headers;
-	typename base::iterator edge_left;
-	typename base::iterator edge_right;
-	typename base::allocator alloc;
+	container headers;
+	iterator edge_left;
+	iterator edge_right;
+	allocator alloc;
 
-	big_header_index_base(const typename base::allocator& alloc = typename base::allocator()) : alloc(alloc) { init(); }
-	big_header_index_base(typename base::allocator&& alloc) : alloc(std::move(alloc)) { init(); }
-	~big_header_index_base() { std::for_each(edge_left, edge_right - 1, deallocate_area(alloc)); }
+	void _move_from(big_header_index& other) {
+		edge_left = other.edge_left;
+		edge_right = other.edge_right;
+		other.headers = container();
+		other.edge_left = other.headers.begin();
+		other.edge_right = other.edge_left;
+	}
 
-	void init() {
-		headers.resize(8);
-		edge_left = flat::successor(headers.begin(), (headers.size() >> 1) - 1);
-		edge_right = flat::successor(edge_left, 1);
+	void move_from(big_header_index&& other) {
+		headers = std::move(other.headers);
+		alloc = std::move(other.alloc);
+		_move_from(other);
+	}
+
+	void destroy() {
+		if(edge_left != edge_right)
+			std::for_each(edge_left, edge_right - 1, deallocate_area(alloc));
+	}
+
+	void _init() {
+		std::tie(edge_left, edge_right) = middle_edges(headers);
 		set_area(*edge_left, nullptr);
 		set_begin_end_indices(*edge_left, capacity(*edge_left));
 	}
-};
-
-template<typename T, std::size_t C, typename A>
-struct small_header_index_base : public index_types_base<small_segment_header<T, C>, A>
-{
-	using base = index_types_base<small_segment_header<T, C>, A>;
-	typename base::container headers;
-	typename base::iterator edge_left;
-	typename base::iterator edge_right;
-	typename base::allocator alloc;
-
-	small_header_index_base(const typename base::allocator& alloc = typename base::allocator()) : alloc(alloc) { init(); }
-	small_header_index_base(typename base::allocator&& alloc) : alloc(std::move(alloc)) { init(); }
-	~small_header_index_base() { std::for_each(edge_left, edge_right, deallocate_area(alloc)); }
 
 	void init() {
 		headers.resize(8);
-		edge_left = flat::successor(headers.begin(), (headers.size() >> 1) - 1);
-		edge_right = flat::successor(edge_left, 1);
-		set_area(*edge_left, alloc.allocate(1));
-		set_begin_end_indices(*edge_left, capacity(*edge_left));
+		_init();
 	}
-};
-
-
-// Data structure responsible for holding all "segment headers" and allocating and deallocating
-// "segment areas".
-template<typename I>
-// I models IndexBase
-class index : public I
-{
-public:
-	using base = I;
-	using header_type = typename base::header_type;
-	using value_type = typename base::value_type;
-	using area_type = typename base::area_type;
-	using container = typename base::container;
-	using iterator = typename base::iterator;
-	using const_iterator = typename base::const_iterator;
-	using reverse_iterator = typename base::reverse_iterator;
-	using const_reverse_iterator = typename base::const_reverse_iterator;
-	using size_type = typename base::size_type;
-	using allocator = typename base::allocator;
-	constexpr static size_t segment_capacity = I::segment_capacity;
 
 public:
-	index(const allocator& alloc = allocator()) : base(alloc) {}
-	index(allocator&& alloc) : base(std::move(alloc)) {}
+	big_header_index(const allocator& alloc = allocator()) : alloc(alloc) { init(); }
+	big_header_index(allocator&& alloc) : alloc(std::move(alloc)) { init(); }
+	big_header_index(big_header_index&& other) :
+		headers(std::move(other.headers)),
+		alloc(std::move(other.alloc))
+	{
+		_move_from(other);
+	}
+	big_header_index(const big_header_index& other) :
+		headers(other.size() + (other.size() >> 1)),
+		alloc(other.alloc)
+	{
+		_init();
+	}
+	~big_header_index() { destroy(); }
+
+	big_header_index& operator=(big_header_index&& other) {
+		destroy();
+		move_from(std::move(other));
+		return *this;
+	}
+	big_header_index& operator=(const big_header_index& other) {
+		destroy();
+		headers.resize(other.size() >> 1);
+		alloc = other.alloc();
+		_init();
+		return *this;
+	};
 
 	iterator insert(iterator it, size_type n) {
 		// precondition: it belongs to [begin(), end()]
@@ -1215,22 +1219,163 @@ public:
 	}
 
 	friend
-	iterator insert(index& i, iterator it, size_type n) {
+	iterator insert(big_header_index& i, iterator it, size_type n) {
 		return i.insert(it, n);
 	}
 
 	friend
-	iterator erase(index& i, iterator first, iterator last) {
+	iterator erase(big_header_index& i, iterator first, iterator last) {
 		return i.erase(first, last);
 	}
 
 	friend
-	iterator insert(index& i, iterator it) {
+	iterator insert(big_header_index& i, iterator it) {
 		return i.insert(it, 1);
 	}
 
 	friend
-	iterator erase(index& i, iterator it) {
+	iterator erase(big_header_index& i, iterator it) {
+		return i.erase(it, it + 1);
+	}
+
+	iterator begin() { return edge_left; }
+	const_iterator cbegin() const { return const_iterator(edge_left); }
+	const_iterator begin() const { return cbegin(); }
+
+	iterator end() { return edge_right - 1; }
+	const_iterator cend() const { return const_iterator(edge_right - 1); }
+	const_iterator end() const { return cend(); }
+
+	reverse_iterator rbegin() { return reverse_iterator(end()); }
+	const_reverse_iterator crbegin() const { return const_reverse_iterator(cend()); }
+	const_reverse_iterator rbegin() const { return crbegin(); }
+
+	reverse_iterator rend() { return reverse_iterator(begin()); }
+	const_reverse_iterator crend() const { return const_reverse_iterator(cbegin()); }
+	const_reverse_iterator rend() const { return crend(); }
+
+	size_t size() const { return static_cast<size_t>(end() - begin()); }
+	bool empty() const { return cbegin() == cend(); }
+};
+
+// Data structure responsible for holding all "segment headers" and allocating and deallocating
+// "segment areas".
+template<typename T, std::size_t C, typename A>
+// T models
+// A models Allocator
+// ValueType<A> == T
+class small_header_index
+{
+public:
+	using header_type = small_segment_header<T, C>;
+	using value_type = ValueType<header_type>;
+	using area_type = AreaType<header_type>;
+	using container = std::vector<header_type>;
+	using iterator = Iterator<container>;
+	using const_iterator = ConstIterator<container>;
+	using reverse_iterator = std::reverse_iterator<iterator>;
+	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+	using size_type = SizeType<container>;
+	using allocator = A;
+	constexpr static size_t segment_capacity = header_type::capacity;
+
+	container headers;
+	iterator edge_left;
+	iterator edge_right;
+	allocator alloc;
+
+	void _move_from(small_header_index& other) {
+		edge_left = other.edge_left;
+		edge_right = other.edge_right;
+		other.headers = container();
+		other.edge_left = other.headers.begin();
+		other.edge_right = other.edge_left;
+	}
+
+	void move_from(small_header_index&& other) {
+		headers = std::move(other.headers);
+		alloc = std::move(other.alloc);
+		_move_from(other);
+	}
+
+	void destroy() {
+		std::for_each(edge_left, edge_right, deallocate_area(alloc));
+	}
+
+	void _init() {
+		std::tie(edge_left, edge_right) = middle_edges(headers);
+		set_area(*edge_left, alloc.allocate(1));
+		set_begin_end_indices(*edge_left, capacity(*edge_left));
+	}
+
+	void init() {
+		headers.resize(8);
+		_init();
+	}
+
+public:
+	small_header_index(const allocator& alloc = allocator()) : alloc(alloc) { init(); }
+	small_header_index(allocator&& alloc) : alloc(std::move(alloc)) { init(); }
+	small_header_index(small_header_index&& other) :
+		headers(std::move(other.headers)),
+		alloc(std::move(other.alloc))
+	{ 
+		_move_from(other);
+	}
+	small_header_index(const small_header_index& other) :
+		headers(other.size() + (other.size() >> 1)),
+	    alloc(other.alloc)
+	{ 
+		_init();
+	}
+	~small_header_index() { destroy(); }
+
+	small_header_index& operator=(small_header_index&& other) {
+		destroy();
+		move_from(std::move(other));
+		return *this;
+	};
+	small_header_index& operator=(const small_header_index& other) {
+		destroy();
+		headers.resize(other.size() >> 1);
+		alloc = other.alloc();
+		_init();
+		return *this;
+	};
+
+	iterator insert(iterator it, size_type n) {
+		// precondition: it belongs to [begin(), end()]
+		insert_headers_and_allocate_areas(headers, edge_left, edge_right, alloc, it, n);
+		return it;
+	}
+
+	iterator erase(iterator first, iterator last) {
+		// precondition: [first, last] belongs to [begin(), end()]
+		erase_headers_and_deallocate_areas(edge_left, edge_right, alloc, first, last);
+		return first;
+	}
+
+	void clear() {
+		erase(begin(), end());
+	}
+
+	friend
+	iterator insert(small_header_index& i, iterator it, size_type n) {
+		return i.insert(it, n);
+	}
+
+	friend
+	iterator erase(small_header_index& i, iterator first, iterator last) {
+		return i.erase(first, last);
+	}
+
+	friend
+	iterator insert(small_header_index& i, iterator it) {
+		return i.insert(it, 1);
+	}
+
+	friend
+	iterator erase(small_header_index& i, iterator it) {
 		return i.erase(it, it + 1);
 	}
 
@@ -1255,29 +1400,20 @@ public:
 };
 
 
-template<typename T, std::size_t C, typename A = std::allocator<AreaType<big_segment_header<T, C>>>>
-// T models Regular
-// A models Allocator
-// ValueType<A> == AreaType<big_segment_header<T, C>>
-using big_header_index = index<big_header_index_base<T, C, A>>;
-
-template<typename T, std::size_t C, typename A = std::allocator<AreaType<big_segment_header<T, C>>>>
-// T models Regular
-// A models Allocator
-// ValueType<A> == AreaType<small_segment_header<T, C>>
-using small_header_index = index<small_header_index_base<T, C, A>>;
-
-
-template<typename K, typename M, typename I, typename S>
+template<typename K, typename M, typename Cmp, typename I, typename CmpAdapt, typename VK>
 // I models SegmentIndex
+// Cmp models StrictWeakOrdering
+// Domain<Cmp> == K
 // S models BoundedSearch
 class container
 {
 public:
+	using value_to_key = VK;
+	using compare_adaptor = CmpAdapt;
 	using key_type = K;
 	using mapped_type = M;
-	using search = S;
 	using index = I;
+	using key_compare = Cmp;
 	using allocator = AllocatorType<index>;
 	using value_type = ValueType<index>;
 	using header_iterator = Iterator<index>;
@@ -1291,16 +1427,31 @@ public:
 	using iterator = segment_coordinate;
 	using size_type = seg::size_t;
 
+	struct equal_adaptor
+	{
+		compare_adaptor cmp;
+		equal_adaptor(compare_adaptor cmp) : cmp(cmp) {}
+
+		bool operator()(const value_type& x, const value_type& y) const {
+			return !cmp(x, y) && !cmp(y, x);
+		}
+	};
+
 private:
 	index in;
-	size_type size;
-	search sr;
+	size_type s;
+	compare_adaptor cmp;
 
 	segment_iterator segment_iterator_from_const(const_segment_iterator it) {
 		return segment_iterator(flat::successor(std::begin(in), it.h - std::cbegin(in)));
 	}
 	segment_coordinate coordinate_from_const(const_segment_coordinate it) {
 		return segment_coordinate(segment_iterator_from_const(it._seg), const_cast<flat_iterator>(it._flat));
+	}
+	std::pair<header_iterator, size_t> header_from_coordinate(segment_coordinate c) {
+		if (c._seg.h != in.end() || empty())
+			return { header_iterator(c._seg.h), static_cast<size_t>(c._flat - seg::begin(*c._seg.h)) };
+		return { header_iterator(c._seg.h - 1), seg::size(*(c._seg.h - 1)) };
 	}
 
 
@@ -1326,51 +1477,104 @@ private:
 	}
 
 
-	segment_coordinate __insert(header_iterator it, seg::size_t i) {
-		segment_coordinate _it = coordinate_unguarded(seg::insert_to_segment_range(in, it, i, 1).first);
-		size = size + 1;
+	segment_coordinate __insert(std::pair<header_iterator, seg::size_t> it) {
+		segment_coordinate _it = coordinate_unguarded(seg::insert_to_segment_range(in, it.first, it.second, 1).first);
+		s = s + 1;
 		return _it;
 	}
-	std::pair<segment_coordinate, segment_coordinate> __insert(header_iterator it, seg::size_t i, size_type n) {
-		auto [_begin, _end] = seg::insert_to_segment_range(in, it, i, static_cast<seg::size_t>(n));
-		size = size + n;
+	std::pair<segment_coordinate, segment_coordinate> __insert(std::pair<header_iterator, seg::size_t> it, size_type n) {
+		auto [_begin, _end] = seg::insert_to_segment_range(in, it.first, it.second, static_cast<seg::size_t>(n));
+		s = s + n;
 		return { coordinate_unguarded(_begin), coordinate_unguarded(_end) };
 	}
 
 
 	segment_coordinate _insert(segment_coordinate it) {
-		return __insert(it._seg.h, static_cast<seg::size_t>(it._flat - std::begin(in._seg)));
+		return __insert(header_from_coordinate(it));
 	}
 	std::pair<segment_coordinate, segment_coordinate> _insert(segment_coordinate it, size_type n) {
-		return __insert(it._seg.h, static_cast<seg::size_t>(it._flat - std::begin(in._seg)), n);
+		return __insert(header_from_coordinate(it), n);
 	}
 
 
-	segment_coordinate __erase(header_iterator left, seg::size_t left_i, header_iterator right, seg::size_t right_i) {
-		auto [it, i, s] = seg::erase_from_segment_range(in, left, left_i, right, right_i);
-		size = size - s;
+	segment_coordinate __erase(std::pair<header_iterator, seg::size_t> left, std::pair<header_iterator, seg::size_t> right) {
+		auto [it, i, _s] = seg::erase_from_segment_range(in, left.first, left.second, right.first, right.second);
+		s = s - _s;
 		return coordinate(std::make_pair(it, i));
 	}
 
 
 	segment_coordinate _erase(segment_coordinate left, segment_coordinate right) {
-		return __erase(
-			left._seg.h, 
-			static_cast<seg::size_t>(left._flat - std::begin(left._seg)), 
-			right._seg.h, 
-			static_cast<seg::size_t>(right._flat - std::begin(right._seg)));
+		return __erase(header_from_coordinate(left), header_from_coordinate(right));
 	}
 
 
-	segment_coordinate _erase(segment_coordinate it) {
-		seg::size_t left_i = static_cast<seg::size_t>(it._flat - std::begin(it._seg));
-		return __erase(it._seg.h, left_i, it._seg.h, left_i + 1);
+	segment_coordinate _erase(segment_coordinate left) {
+		return __erase(header_from_coordinate(left), header_from_coordinate(successor(left, 1)));
+	}
+
+	void copy_from(const container& other) {
+		s = other.s;
+		seg::copy(std::begin(other), std::end(other), _insert(std::begin(in), s));
 	}
 
 public:
-	container(const allocator& alloc = allocator()) : in(alloc) {}
+	container(container&& other) : in(std::move(other.in)), s(std::move(other.s)), cmp(std::move(other.cmp)) {}
+	container(const container& other) : in(other.in), s(other.s), cmp(other.cmp) { copy_from(other);  }
+	container(const key_compare cmp = key_compare(), const allocator& alloc = allocator()) : in(alloc), cmp(cmp) {}
+	container(const key_compare cmp, index&& in, size_type s) : in(std::move(in)), s(s), cmp(cmp) {}
+	~container() { clear(); }
+
+	container& operator=(container&& other) {
+		clear();
+		in = std::move(other.in);
+		s = std::move(other.s);
+		cmp = std::move(other.cmp);
+		return *this;
+	}
+	container& operator=(const container& other) {
+		clear();
+		copy_from();
+		return *this;
+	}
+
+	friend
+	bool operator==(const container& x, const container& y) {
+		if (x.size() != y.size()) return false;
+		return seg::equal(std::cbegin(x), std::cend(x), std::cbegin(y), equal_adaptor(cmp));
+	}
+	friend
+	bool operator!=(const container& x, const container& y) {
+		return !(x == y);
+	}
+
+	friend
+	bool operator<(const container& x, const container& y) {
+		return seg::compare(std::cbegin(x), std::cend(x), std::cbegin(y), std::cend(y), cmp);
+	}
+	friend
+	bool operator>(const container& x, const container& y) {
+		return y < x;
+	}
+	friend
+	bool operator<=(const container& x, const container& y) {
+		return !(y < x);
+	}
+	friend
+	bool operator>=(const container& x, const container& y) {
+		return !(x < y);
+	}
 
 	bool empty() const { return in.empty(); }
+
+	size_type size() const { return s; }
+
+	key_compare key_comp() const { return cmp.key_comp(); }
+
+	void swap(index& _in, size_type& _s) {
+	    std::swap(_in, in);
+		std::swap(_s, s);
+	}
 
 	segment_coordinate begin() {
 		segment_iterator first_seg = segment_iterator(std::begin(in));
@@ -1409,11 +1613,24 @@ public:
 		return r;
 	}
 
-	template<typename... Args>
-	segment_coordinate insert_unguarded(segment_coordinate it, Args&&... args) {
+	segment_coordinate insert_unguarded(segment_coordinate it, value_type&& v) {
 		it = _insert(it);
-		construct_at(it, std::forward<Args>(args)...);
+		construct_at(it, std::move(v));
 		return it;
+	}
+
+	segment_coordinate insert_unguarded(segment_coordinate it, const value_type& v) {
+		it = _insert(it);
+		construct_at(it, v);
+		return it;
+	}
+
+	segment_coordinate insert(value_type&& v) {
+		return insert_unguarded(upper_bound(value_to_key::get(v)), std::move(v));
+	}
+
+	segment_coordinate insert(const value_type& v) {
+		return insert_unguarded(upper_bound(value_to_key::get(v)), v);
 	}
 
 	template<typename I>
@@ -1438,7 +1655,6 @@ public:
 	segment_coordinate erase(segment_coordinate first, segment_coordinate last) {
 		return _erase(first, last);
 	}
-
 	segment_coordinate erase(segment_coordinate it) {
 		return _erase(it);
 	}
@@ -1450,131 +1666,84 @@ public:
 	segment_coordinate erase(const_segment_coordinate first, const_segment_coordinate last) {
 		return erase(coordinate_from_const(first), coordinate_from_const(last));
 	}
-
 	segment_coordinate erase(const_segment_coordinate it) {
 		return _erase(coordinate_from_const(it));
 	}
 
 
 	segment_coordinate lower_bound(const key_type& k) {
-		return sr.lower_bound(begin(), end(), k);
+		return seg::lower_bound(begin(), end(), k, cmp);
 	}
-
 	const_segment_coordinate lower_bound(const key_type& k) const {
-		return sr.lower_bound(cbegin(), cend(), k);
+		return seg::lower_bound(cbegin(), cend(), k, cmp);
 	}
 
 	segment_coordinate upper_bound(const key_type& k) {
-		return sr.upper_bound(begin(), end(), k);
+		return seg::upper_bound(begin(), end(), k, cmp);
 	}
-
 	const_segment_coordinate upper_bound(const key_type& k) const {
-		return sr.upper_bound(cbegin(), cend(), k);
+		return seg::upper_bound(cbegin(), cend(), k, cmp);
 	}
 
 	std::pair<segment_coordinate, segment_coordinate> equal_range(const key_type& k) {
-		return sr.equal_range(begin(), end(), k);
+		return seg::equal_range(begin(), end(), k, cmp);
 	}
-
 	std::pair<const_segment_coordinate, const_segment_coordinate> equal_range(const key_type& k) const {
-		return sr.equal_range(cbegin(), cend(), k);
+		return seg::equal_range(cbegin(), cend(), k, cmp);
 	}
 };
-
-
 
 template<typename Cmp>
 // Cmp models StrictWeakOrdering
-// Domain<Cmp> == K
-struct set_bounded_search
+struct map_compare_adaptor
 {
 	Cmp cmp;
 
-	set_bounded_search(Cmp cmp) : cmp(cmp) {}
+	map_compare_adaptor(const Cmp& cmp) : cmp(cmp) {}
 
-	template<typename C>
-	// C models SegmentCoordinate
-	// Domain<Cmp> == IteratorValueType<C>
-	C lower_bound(C first, C last, const IteratorValueType<C>& key) {
-		return seg::lower_bound(first, last, key, cmp);
+	template<typename T>
+	// Domain<Cmp> == typename T::first
+	bool operator()(const T& x, const T& y) const {
+		return cmp(x.first, y.first);
 	}
 
-	template<typename C>
-	// C models SegmentCoordinate
-	// Domain<Cmp> == IteratorValueType<C>
-	C upper_bound(C first, C last, const IteratorValueType<C>& key) {
-		return seg::upper_bound(first, last, key, cmp);
-	}
-
-	template<typename C>
-	// C models SegmentCoordinate
-	// Domain<Cmp> == IteratorValueType<C>
-	std::pair<C, C> equal_range(C first, C last, const IteratorValueType<C>& key) {
-		return seg::equal_range(first, last, key, cmp);
-	}
+	Cmp key_compare() const { return cmp; }
 };
 
-template<typename Cmp, typename K, typename M>
+template<typename Cmp>
 // Cmp models StrictWeakOrdering
-// Domain<Cmp> == K
-struct map_pred_lower_bound
+struct set_compare_adaptor
 {
 	Cmp cmp;
-	const K* x;
 
-	map_pred_lower_bound(Cmp cmp, const K& y) : cmp(cmp), x(x) {}
-	bool operator()(const std::pair<K, M>& y) const { return !cmp(y.first, *x); }
+	set_compare_adaptor(const Cmp& cmp) : cmp(cmp) {}
+
+	template<typename T>
+	// Domain<Cmp> == T
+	bool operator()(const T& x, const T& y) const {
+		return cmp(x, y);
+	}
+
+	Cmp key_compare() const { return cmp; }
 };
 
-template<typename Cmp, typename K, typename M>
-// Cmp models StrictWeakOrdering
-// Domain<Cmp> == K
-struct map_pred_upper_bound
+struct map_value_to_key
 {
-	Cmp cmp;
-	const K* x;
+	template<typename T0, typename T1>
+	static T0& get(std::pair<T0, T1>& x) { return x.first; }
 
-	map_pred_upper_bound(Cmp cmp, const K& x) : cmp(cmp), x(x) {}
-	bool operator()(const std::pair<K, M>& y) const { return cmp(*x, y.first); }
+	template<typename T0, typename T1>
+	static const T0& get(const std::pair<T0, T1>& x) { return x.first; }
 };
 
-
-template<typename Cmp, typename K, typename M>
-// Cmp models StrictWeakOrdering
-// Domain<Cmp> == K
-struct map_bounded_search
+struct set_value_to_key
 {
-	using pred_lower_bound = map_pred_lower_bound<Cmp, K, M>;
-	using pred_upper_bound = map_pred_upper_bound<Cmp, K, M>;
+	template<typename T>
+	static T& get(T& x) { return x; }
 
-	Cmp cmp;
-
-	map_bounded_search(Cmp cmp) : cmp(cmp) {}
-
-	template<typename C>
-	// C models SegmentCoordinate
-	// IteratorValueType<C> == std::pair<K, M>
-	C lower_bound(C first, C last, const K& key) {
-		return seg::partition_point(first, last, pred_lower_bound(cmp, key));
-	}
-
-	template<typename C>
-	// C models SegmentCoordinate
-	// IteratorValueType<C> == std::pair<K, M>
-	C upper_bound(C first, C last, const K& key) {
-		return seg::partition_point(first, last, pred_upper_bound(cmp, key));
-	}
-
-	template<typename C>
-	// C models SegmentCoordinate
-	// IteratorValueType<C> == std::pair<K, M>
-	std::pair<C, C> equal_range(C first, C last, const K& key) {
-		C lower_bound = lower_bound(first, last, key);
-		C upper_bound = upper_bound(lower_bound, last, key);
-		return { lower_bound, upper_bound };
-	}
+	template<typename T>
+	static const T& get(const T& x) { return x; }
 };
-
 
 constexpr segment_size_t default_segment_capacity = 1024u;
 
@@ -1585,13 +1754,12 @@ constexpr segment_size_t default_capacity_for_type() {
 	return capacity > 2 ? c : 2;
 }
 
-
 template<
 	typename K,
 	typename M,
 	typename Cmp,
 	typename I>
-using map_tmp = container<K, M, I, map_bounded_search<Cmp, K, M>>;
+using multimap_tmp = container<K, M, Cmp, I, map_compare_adaptor<Cmp>, map_value_to_key>;
 
 template<
 	typename K,
@@ -1599,7 +1767,7 @@ template<
 	typename Cmp,
 	segment_size_t C,
 	typename A>
-using map_big_header = map_tmp<K, M, Cmp, big_header_index<std::pair<K, M>, C, A>>;
+using multimap_big_header = multimap_tmp<K, M, Cmp, big_header_index<std::pair<K, M>, C, A>>;
 
 template<
 	typename K,
@@ -1607,43 +1775,42 @@ template<
 	typename Cmp,
 	segment_size_t C,
 	typename A>
-using map_small_header = map_tmp<K, M, Cmp, small_header_index<std::pair<K, M>, C, A>>;
+using multimap_small_header = multimap_tmp<K, M, Cmp, small_header_index<std::pair<K, M>, C, A>>;
 
 template<
 	typename K,
 	typename M,
-	typename Cmp,
+	typename Cmp = std::less<K>,
 	segment_size_t C = default_capacity_for_type<std::pair<K, M>>(),
 	typename A = std::allocator<std::pair<K, M>>>
-using map = map_big_header<K, M, Cmp, C, A>;
+using multimap = multimap_big_header<K, M, Cmp, C, A>;
 
 template<
 	typename K,
 	typename Cmp,
 	typename I>
-using set_tmp = container<K, K, I, set_bounded_search<Cmp>>;
+using multiset_tmp = container<K, K, Cmp, I, set_compare_adaptor<Cmp>, set_value_to_key>;
 
 template<
 	typename K,
 	typename Cmp,
 	segment_size_t C,
 	typename A>
-using set_big_header = set_tmp<K, Cmp, big_header_index<K, C, A>>;
+using multiset_big_header = multiset_tmp<K, Cmp, big_header_index<K, C, A>>;
 
 template<
 	typename K,
 	typename Cmp,
 	segment_size_t C,
 	typename A>
-using set_small_header = set_tmp<K, Cmp, small_header_index<K, C, A>>;
-
+using multiset_small_header = multiset_tmp<K, Cmp, small_header_index<K, C, A>>;
 
 template<
 	typename K,
-	typename Cmp,
+	typename Cmp = std::less<K>,
 	segment_size_t C = default_capacity_for_type<K>(),
 	typename A = std::allocator<K>>
-using set = set_big_header<K, Cmp, C, A>;
+using multiset = multiset_big_header<K, Cmp, C, A>;
 
 } // namespace seg
 

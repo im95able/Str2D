@@ -5,6 +5,7 @@
 #include <memory>
 #include <utility>
 #include <cstdlib>
+#include <vector>
 
 template<typename C>
 // C models Container
@@ -75,13 +76,20 @@ template<typename C>
 using ConstSegmentIterator = typename C::const_segment_iterator;
 
 
-template<typename I1, typename I2>
+template<typename I0, typename I1>
 using TriviallyCopyableMemory = std::integral_constant<bool,
-	std::is_pointer<I1>::value &&
-	std::is_pointer<I2>::value &&
-	std::is_same<IteratorValueType<I1>, IteratorValueType<I2>>::value &&
-	std::is_trivially_copyable<IteratorValueType<I1>>::value &&
-	std::is_trivially_destructible<IteratorValueType<I1>>::value>;
+	(std::is_pointer<I0>::value ||
+	std::is_same<Iterator<std::vector<IteratorValueType<I0>>>, I0>::value ||
+	std::is_same<ConstIterator<std::vector<IteratorValueType<I0>>>, I0>::value)
+	&&
+	(std::is_pointer<I1>::value || std::is_same<Iterator<std::vector<IteratorValueType<I1>>>, I1>::value)
+	&&
+	std::is_same<IteratorValueType<I0>, IteratorValueType<I1>>::value
+	&&
+	std::is_trivially_copyable<IteratorValueType<I0>>::value 
+	&&
+	std::is_trivially_destructible<IteratorValueType<I0>>::value>;
+
 
 template<typename T>
 using TriviallyDestructible = std::integral_constant<bool, std::is_trivially_destructible<T>::value>;
@@ -156,7 +164,7 @@ struct lower_bound_predicate
 	lower_bound_predicate(const T& x, Cmp cmp) : x(&x), cmp(cmp) {}
 
 	bool operator()(const T& y) const {
-		return !cmp(y, *x);
+		return cmp(y, *x);
 	}
 };
 
@@ -171,46 +179,6 @@ struct upper_bound_predicate
 	upper_bound_predicate(const T& x, Cmp cmp) : x(&x), cmp(cmp) {}
 
 	bool operator()(const T& y) const {
-		return cmp(*x, y);
-	}
-};
-
-struct equal_to
-{
-	template<typename T0, typename T1>
-	bool operator()(const T0& x, const T1& y) {
-		return x == y;
-	}
-};
-
-struct less
-{
-	template<typename T0, typename T1>
-	bool operator()(const T0& x, const T1& y) {
-		return x < y;
-	}
-};
-
-struct less_equal
-{
-	template<typename T0, typename T1>
-	bool operator()(const T0& x, const T1& y) {
-		return x <= y;
-	}
-};
-
-struct greater
-{
-	template<typename T0, typename T1>
-	bool operator()(const T0& x, const T1& y) {
-		return x > y;
-	}
-};
-
-struct greater_equal
-{
-	template<typename T0, typename T1>
-	bool operator()(const T0& x, const T1& y) {
-		return x >= y;
+		return !cmp(*x, y);
 	}
 };

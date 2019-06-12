@@ -32,12 +32,12 @@ template<typename I0, typename N, typename I1, typename C>
 // InputType<C, 0> == IteratorValueType<I0>
 // InputType<C, 1> == IteratorValueType<I1>
 std::pair<I0, std::pair<I1, FlatIterator<I1>>> _copy_flat_n_seg(I0 first0, N n0, I1 first_seg1, FlatIterator<I1> first_flat1, C c) {
-	IteratorDifferenceType<FlatIterator<I1>> n1 = std::end(first_seg1) - first_flat1;
+	N n1 = static_cast<N>(std::end(first_seg1) - first_flat1);
 	while(n0 > n1) {
 		first0 = flat::_copy_n(first0, n1, first_flat1, c).first;
 		n0 = n0 - n1;
 		first_flat1 = std::begin(++first_seg1);
-		n1 = std::end(first_seg1) - first_flat1;
+		n1 = static_cast<N>(std::end(first_seg1) - first_flat1);
 	}
 	return { flat::_copy_n(first0, n0, first_flat1, c).first, { first_seg1, flat::successor(first_flat1, n0) } };
 }
@@ -582,16 +582,16 @@ std::pair<I, FlatIterator<I>> partition_point(
 	while(n) {
 		IteratorDifferenceType<I> h = n >> 1;
 		I middle_seg = flat::successor(first_seg, h);
-		FlatIterator<I> flat = flat::predecessor(std::end(middle_seg));
+		FlatIterator<I> flat = flat::predecessor(std::end(middle_seg), 1);
 		if(p(*flat)) {
+			first_seg = flat::successor(middle_seg, 1);
+			first_flat = std::begin(first_seg);
+			n = n - h - 1;
+		}
+		else {
 			last_seg = middle_seg;
 			last_flat = flat;
 			n = h;
-		}
-		else {
-			first_seg = flat::successor(middle_seg);
-			first_flat = std::begin(first_seg);
-			n = n - h - 1;
 		}
 	}
 	return { first_seg, pr(first_flat, last_flat, p) };
@@ -734,7 +734,7 @@ template<typename I, typename Cmp, typename Proc = flat::find_adaptor_binary>
 inline
 std::pair<I, FlatIterator<I>> upper_bound(
 	I first_seg, FlatIterator<I> first_flat, I last_seg, FlatIterator<I> last_flat, const IteratorValueType<I>& x, Cmp cmp, Proc pr = Proc{}) {
-	return seg::partition_point(first_seg, first_flat, last_seg, last_flat, seg::upper_bound_predicate(x, cmp), pr);
+	return seg::partition_point(first_seg, first_flat, last_seg, last_flat, upper_bound_predicate(x, cmp), pr);
 }
 
 template<typename I, typename Cmp, typename N, typename Proc = flat::find_adaptor_binary>
@@ -757,7 +757,7 @@ std::pair<I, FlatIterator<I>> upper_bound_combined(
 	Cmp cmp, 
 	N n,
 	Proc pr = Proc{}) {
-	return seg::partition_point_combined(first_seg, first_flat, last_seg, last_flat, seg::upper_bound_predicate(x, cmp), n, pr);
+	return seg::partition_point_combined(first_seg, first_flat, last_seg, last_flat, upper_bound_predicate(x, cmp), n, pr);
 }
 
 template<typename C, typename Cmp, typename Proc = flat::find_adaptor_binary>
@@ -805,20 +805,21 @@ pair2<I, FlatIterator<I>> equal_range(
 	while(n) {
 		IteratorDifferenceType<I> h = n >> 1;
 		I middle_seg = std::next(first_seg, h);
-		FlatIterator<I> flat = std::prev(std::end(middle_seg));
+		FlatIterator<I> flat = flat::predecessor(std::end(middle_seg), 1);
 		if(cmp(x, *flat)) {
 			last_seg = middle_seg;
 			last_flat = flat;
 			n = h;
 		}
 		else if(cmp(*flat, x)) {
-			first_seg = flat::successor(middle_seg);
+			first_seg = flat::successor(middle_seg, 1);
 			first_flat = std::begin(first_seg);
 			n = n - h - 1;
 		}
 		else {
+			I _middle_seg = flat::successor(middle_seg, 1);
 			return { seg::lower_bound(first_seg, first_flat, middle_seg, flat, x, cmp), 
-					 seg::upper_bound(++middle_seg, std::begin(middle_seg), last_seg, last_flat, x, cmp) };
+					 seg::upper_bound(_middle_seg, std::begin(_middle_seg), last_seg, last_flat, x, cmp) };
 		}
 	}
 	
@@ -826,7 +827,7 @@ pair2<I, FlatIterator<I>> equal_range(
 	return { {first_seg, tmp.first}, {first_seg, tmp.second} };
 }
 
-template<typename C, typename Cmp, typename Proc = flat::find_adaptor_binary>
+template<typename C, typename Cmp, typename Proc = flat::equal_range_adaptor_binary>
 // C models SegmentCoordinate
 // Cmp models StrictWeakOrdering
 // Domain<Cmp> == IteratorValueType<I>
@@ -837,7 +838,7 @@ template<typename C, typename Cmp, typename Proc = flat::find_adaptor_binary>
 // Codomain<Proc> == FlatIterator<C>
 inline
 std::pair<C, C> equal_range(C first, C last, const IteratorValueType<C>& x, Cmp cmp, Proc pr = Proc{}) {
-	pair2<SegmentIterator<C>, FlatIterator<C>> tmp = seg::equal_range(segment(first), flat(first), segment(last), flat(last), cmp, pr);
+	pair2<SegmentIterator<C>, FlatIterator<C>> tmp = seg::equal_range(segment(first), flat(first), segment(last), flat(last), x, cmp, pr);
 	return { C(tmp.first), C(tmp.second) };
 }
 
@@ -864,73 +865,77 @@ void destruct(C first, C last) {
 
 
 template<typename I0, typename I1, typename P>
-// I1 models SegmentIreator
-// I0 models ForwardIterator
+// I0 models SegmentIterator
+// I1 models ForwardIterator
 // P models EquivalenceRelation
 // Domain<P> == IteratorValueType<I0> == IteratorValueType<I1>
-std::pair<std::pair<I1, FlatIterator<I1>>, I0>
-equal_seg_flat(I0 first_seg0, FlatIterator<I0> first_flat0, I0 last_seg0, FlatIterator<I0> last_flat0, I1 first1, P p) {
+bool equal_seg_flat(I0 first_seg0, FlatIterator<I0> first_flat0, I0 last_seg0, FlatIterator<I0> last_flat0, I1 first1, P p) {
 	while (first_seg0 != last_seg0) {
 		std::tie(first_flat0, first1) = flat::equal(first_flat0, std::end(first_seg0), first1, p);
-		if (first_flat0 != std::end(first_seg0))
-			return { first_flat0, first1 };
+		if (first_flat0 != std::end(first_seg0)) 
+			return false;
 		first_flat0 = std::begin(++first_seg0);
 	}
 	return flat::equal(first_flat0, std::end(first_seg0), first1, p);
 }
 
 template<typename I0, typename I1>
-// I1 models SegmentIreator
-// I0 models ForwardIterator
+// I0 models SegmentIterator
+// I1 models ForwardIterator
 // IteratorValueType<I0> == IteratorValueType<I1>
 // IteratorValueType<I0> models Regular
-std::pair<std::pair<I1, FlatIterator<I1>>, I0>
-equal_seg_flat(I0 first_seg0, FlatIterator<I0> first_flat0, I0 last_seg0, FlatIterator<I0> last_flat0, I1 first1) {
-	return seg::equal_seg_flat(first_seg0, first_flat0, last_seg0, last_flat0, first1, equal_to());
+bool equal_seg_flat(I0 first_seg0, FlatIterator<I0> first_flat0, I0 last_seg0, FlatIterator<I0> last_flat0, I1 first1) {
+	return seg::equal_seg_flat(first_seg0, first_flat0, last_seg0, last_flat0, first1, std::equal_to<>());
 }
+
+template<typename C, typename I, typename P>
+// C models SegmentCoordinate
+// I models InputIterator
+// P models EquivalenceRelation
+// Domain<P> == IteratorValueType<C> == IteratorValueType<I>
+bool equal_seg_flat(C first0, C last0, I first1, P p) {
+	return seg::equal_seg_flat(segment(first0), flat(first0), segment(last0), flat(last0), p);
+}
+
+template<typename C, typename I>
+// C models SegmentCoordinate
+// I models InputIterator
+// IteratorValueType<C> == IteratorValueType<I>
+bool equal_seg_flat(C first0, C last0, I first1) {
+	return seg::equal_seg_flat(first0, last0, first1, std::equal_to<>());
+}
+
 
 template<typename I0, typename N, typename I1, typename P>
 // I0 models ForwardIterator
 // N models Integer
-// I1 models SegmentIreator
+// I1 models SegmentIterator
 // P models EquivalenceRelation
 // Domain<P> == IteratorValueType<I0> == IteratorValueType<I1>
-std::tuple<I0, N, std::pair<I1, FlatIterator<I1>>>
-equal_flat_n_seg(I0 first0, N n, I1 first_seg1, FlatIterator<I1> first_flat1, I1 last_seg1, FlatIterator<I1> last_flat1, P p) {
+bool equal_flat_n_seg(I0 first0, N n0, I1 first_seg1, FlatIterator<I1> first_flat1, I1 last_seg1, FlatIterator<I1> last_flat1, P p) {
 	while(first_seg1 != last_seg1) {
 		N n1 = static_cast<N>(std::end(first_seg1) - first_flat1);
-		if (n < n1) {
-			std::tie(first0, n, first_flat1) = flat::equal_n(first0, n, first_flat1, p);
-			return { first0, n, { first_seg1, first_flat1 } };
-		}
-		N n2;
-		std::tie(first0, n2, first_flat1) = flat::equal_n(first0, n1, first_flat1, p);
-		if (n2) {
-			return { first0, n - (n1 - n2), { first_seg1, first_flat1 } };
-		}
+		if (n0 < n1 || !flat::equal_n(first0, n1, first_flat1))
+			return false;
+		n0 = n0 - n1;
+		first0 = flat::successor(first0, n1);
 		first_flat1 = std::begin(++first_seg1);
-		n = n - n1;
-	}
+ 	}
 
 	N n1 = static_cast<N>(last_flat1 - first_flat1);
-	if (n < n1) {
-		std::tie(first0, n, first_flat1) = flat::equal_n(first0, n, first_flat1, p);
-		return { first0, n, { first_seg1, first_flat1 } };
-	}
-	N n2;
-	std::tie(first0, n2, first_flat1) = flat::equal_n(first0, n1, first_flat1, p);
-	return { first0, n - (n1 - n2), { first_seg1, first_flat1 } };
+	if (n0 < n1 || n0 > n1)
+		return false;
+	return flat::equal_n(first0, n0, first_flat1, p);
 }
 
 template<typename I0, typename N, typename I1>
 // I0 models ForwardIterator
 // N models Integer
-// I1 models SegmentIreator
+// I1 models SegmentIterator
 // IteratorValueType<I0> == IteratorValueType<I1>
 // IteratorValueType<I0> models Regular
-std::tuple<I0, N, std::pair<I1, FlatIterator<I1>>>
-equal_flat_n_seg(I0 first0, N n, I1 first_seg1, FlatIterator<I1> first_flat1, I1 last_seg1, FlatIterator<I1> last_flat1) {
-	return seg::equal_flat_n_seg(first0, n, first_seg1, first_flat1, last_seg1, last_flat1, equal_to());
+bool equal_flat_n_seg(I0 first0, N n, I1 first_seg1, FlatIterator<I1> first_flat1, I1 last_seg1, FlatIterator<I1> last_flat1) {
+	return seg::equal_flat_n_seg(first0, n, first_seg1, first_flat1, last_seg1, last_flat1, std::equal_to<>());
 }
 
 template<typename I, typename N, typename C, typename P>
@@ -939,10 +944,8 @@ template<typename I, typename N, typename C, typename P>
 // I1 models SegmentCoordinate
 // P models EquivalenceRelation
 // Domain<P> == IteratorValueType<I0> == IteratorValueType<I1>
-std::tuple<I, N, C>
-equal_flat_n_seg(I first0, N n, C first1, C last1, P p) {
-	auto [_first0, _n, _first1] = seg::equal_flat_n_seg(first0, n, segment(first1), flat(first1), segment(last1), flat(last1), p);
-	return { _first0, _n, C(_first1) };
+bool equal_flat_n_seg(I first0, N n, C first1, C last1, P p) {
+	return seg::equal_flat_n_seg(first0, n, segment(first1), flat(first1), segment(last1), flat(last1), p);
 }
 
 template<typename I, typename N, typename C>
@@ -951,9 +954,194 @@ template<typename I, typename N, typename C>
 // I1 models SegmentCoordinate
 // IteratorValueType<I0> == IteratorValueType<I1>
 // IteratorValueType<I0> models Regular
-std::tuple<I, N, C>
-equal_flat_n_seg(I first0, N n, C first1, C last1) {
-	return seg::equal_flat_n_seg(first0, n, first1, last1, equal_to());
+bool equal_flat_n_seg(I first0, N n, C first1, C last1) {
+	return seg::equal_flat_n_seg(first0, n, first1, last1, std::equal_to<>());
+}
+
+
+
+
+
+template<typename I0, typename I1, typename P>
+// I0 models SegmentIterator
+// I1 models SegmentIterator
+// P models EquivalenceRelation
+// Domain<P> == IteratorValueType<I0> == IteratorValueType<I1>
+bool equal(I0 first_seg0, FlatIterator<I0> first_flat0, I0 last_seg0, FlatIterator<I0> last_flat0, I1 first_seg1, FlatIterator<I1> first_flat1, P p) {
+	
+	using Flat0 = FlatIterator<I0>;
+	using Diff0 = IteratorDifferenceType<Flat0>;
+
+	while (first_seg0 != last_seg0) {
+		Diff0 n0 = std::end(first_seg0) - first_flat0;
+		Diff0 n1 = static_cast<Diff0>(std::end(first_seg1) - first_flat1);
+		if (n0 < n1) {
+			if (!flat::equal_n(first_flat0, n0, first_flat1, p))
+				return false;
+			first_flat0 = std::begin(++first_seg0);
+			first_flat1 = flat::successor(first_flat1, n0);
+		}
+		if (!flat::equal_n(first_flat0, n1, first_flat1, p))
+			return false;
+
+		first_flat1 = std::begin(++first_seg1);
+		if (n0 > n1)
+			first_flat0 = flat::successor(first_flat0, n1);
+		else
+			first_flat0 = std::begin(++first_seg0);
+	}
+	return seg::equal_flat_n_seg(first_flat0, last_flat0 - first_flat0, first_seg1, first_flat1, p);
+}
+
+template<typename I0, typename I1>
+// I0 models SegmentIterator
+// I1 models SegmentIterator
+// IteratorValueType<I0> == IteratorValueType<I1>
+bool equal(I0 first_seg0, FlatIterator<I0> first_flat0, I0 last_seg0, FlatIterator<I0> last_flat0, I1 first_seg1, FlatIterator<I1> first_flat1) {
+	return seg::equal(first_seg0, first_flat0, last_seg0, last_flat1, first_seg1, first_flat1, std::equal_to<>());
+}
+
+template<typename C0, typename C1, typename P>
+// C0 models SegmentCoordinate
+// C1 models SegmentCoordinate
+// P models EquivalenceRelation
+// Domain<P> == IteratorValueType<C0> == IteratorValueType<C1>
+bool equal(C0 first0, C0 last0, C1 first1, P p) {
+	return seg::equal(segment(first0), flat(first0), segment(last0), flat(last0), segment(first1), flat(first1), p);
+}
+
+template<typename C0, typename C1>
+// C0 models SegmentCoordinate
+// C1 models SegmentCoordinate
+// P models EquivalenceRelation
+// Domain<P> == IteratorValueType<C0> == IteratorValueType<C1>
+bool equal(C0 first0, C0 last0, C1 first1) {
+	return seg::equal(first0, last0, first1, std::equal_to<>());
+}
+
+
+template<typename Cmp>
+// Cmp models StrictWeakOrdering
+struct equivalence_from_cmp
+{
+	Cmp cmp;
+
+	equivalence_from_cmp(Cmp cmp) : cmp(cmp) {}
+
+	template<typename T>
+	// T == Domain<Cmp>
+	bool operator()(const T& x, const T& y) const {
+		return !(cmp(x, y) || cmp(y, x));
+	}
+};
+
+template<typename I0, typename N, typename I1, typename Cmp>
+// I0 models SegmentIterator
+// I1 models SegmentIterator
+// Cmp models StrictWeakOrdering
+// Domain<P> == IteratorValueType<I0> == IteratorValueType<I1>
+int compare_flat_n_seg(I0 first0, N n0, I1 first_seg1, I1 first_flat1, I1 last_seg1, I1 last_flat1, Cmp cmp) {
+	while (first_seg1 != last_seg1) {
+		N n1 = static_cast<N>(std::end(first_seg1) - first_flat1);
+		int r = flat::compare_n(first0, std::min(n0, n1), first_flat1, cmp);
+		if (r != 0) return r;
+		if (n0 <= n1) return -1;
+		n0 = n0 - n1;
+		first0 = flat::successor(first0, n1);
+		first_flat1 = std::begin(++first_seg1);
+	}
+	N n1 = static_cast<N>(last_flat1 - first_flat1);
+	int r = flat::compare_n(first0, std::min(n0, n1), first_flat1, cmp);
+	if (r != 0) return r;
+	if (n0 <= n1) return -1;
+	return 1;
+}
+
+template<typename I0, typename I1, typename Cmp>
+// I0 models SegmentIterator
+// I1 models SegmentIterator
+// Cmp models StrictWeakOrdering
+// Domain<P> == IteratorValueType<I0> == IteratorValueType<I1>
+int compare(
+	I0 first_seg0,
+	FlatIterator<I0> first_flat0,
+	I0 last_seg0,
+	FlatIterator<I0> last_flat0,
+	I1 first_seg1,
+	FlatIterator<I1> first_flat1,
+	I1 last_seg1,
+	FlatIterator<I1> last_flat1,
+	Cmp cmp) {
+
+	using Flat0 = FlatIterator<I0>;
+	using Diff0 = IteratorDifferenceType<Flat0>;
+	using Flat1 = FlatIterator<I1>;
+	using Diff1 = IteratorDifferenceType<Flat1>;
+
+	while (first_seg0 != last_seg0 && first_seg1 != last_seg0) {
+		Diff0 n0 = std::end(first_seg0) - first_flat0;
+		Diff0 n1 = static_cast<Diff0>(std::end(first_seg1) - first_flat1);
+		int r = flat::equal_n(first0, std::min(n0, n1), first_flat1);
+		if (r != 0)
+			return r;
+		if (n0 < n1) {
+			first_flat0 = std::begin(++first_seg0);
+			first_flat1 = flat::successor(first_flat1, n0);
+		}
+		first_flat1 = std::begin(++first_seg1);
+		if (n0 > n1)
+			first_flat0 = flat::successor(first_flat0, n1);
+		else
+			first_flat0 = std::begin(++first_seg0);
+	}
+
+	if (first_seg0 == last_seg0) {
+		Diff0 n0 = last_flat0 - first_flat0;
+		if (first_seg1 == last_seg1) {
+			Diff0 n1 = static_cast<Diff0>(last_flat1 - first_flat1);
+			int r = flat::compare_n(first0, std::min(n0, n1), first_flat1, cmp);
+			return r == 0 ? n0 < n1 : r;
+		}
+		return seg::compare_flat_n_seg(first_flat0, n0, first_seg1, first_flat1, last_seg1, last_flat1, cmp);
+	}
+	else {
+		return -seg::compare_flat_n_seg(first_flat1, n1, first_seg0, first_flat0, last_seg0, last_flat0, cmp);
+	}
+}
+
+template<typename I0, typename I1>
+// I0 models SegmentIterator
+// I1 models SegmentIterator
+// IteratorValueType<I0> == IteratorValueType<I1>
+int compare(
+	I0 first_seg0,
+	FlatIterator<I0> first_flat0,
+	I0 last_seg0,
+	FlatIterator<I0> last_flat0,
+	I1 first_seg1,
+	FlatIterator<I1> first_flat1,
+	I1 last_seg1,
+	FlatIterator<I1> last_flat1) {
+	return seg::compare(first_seg0, first_flat0, last_seg0, last_flat0, first_seg1, first_flat1, last_seg1, last_flat1, std::less<>());
+}
+
+template<typename C0, typename C1, typename Cmp>
+// C0 models SegmentCoordinate
+// C1 models SegmentCoordinate
+// Cmp models StrictWeakOrdering
+// Domain<Cmp> == IteratorValueType<I0> == IteratorValueType<I1>
+int compare(
+	C0 first0, C0 last0, C1 first1, C1 last1, Cmp cmp) {
+	return seg::compare(segment(first0), flat(first0), segment(last0), flat(last0), segment(first1), flat(first1), segment(last1), flat(last1), cmp);
+}
+
+template<typename C0, typename C1>
+// C0 models SegmentCoordinate
+// C1 models SegmentCoordinate
+// IteratorValueType<I0> == IteratorValueType<I1>
+int compare(
+	C0 first0, C0 last0, C1 first1, C1 last1) {
+	return seg::compare(first0, last0, first1, last1, std::less<>());
 }
 
 

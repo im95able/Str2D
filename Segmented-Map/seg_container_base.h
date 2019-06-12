@@ -124,7 +124,7 @@ struct small_segment_header
 	};
 	static constexpr segment_size_t capacity = C;
 
-	area_type* area{ nullptr };
+	area_type* area;
 };
 
 template<typename T, segment_size_t C>
@@ -353,6 +353,11 @@ struct segment_iterator
 		return *this + (-n);
 	}
 
+	segment_iterator& operator+=(difference_type n) {
+		*this = *this + n;
+		return *this;
+	}
+
 	friend
 	difference_type operator-(const segment_iterator& x, const segment_iterator& y) {
 		return difference_type(x.h - y.h);
@@ -448,6 +453,11 @@ struct const_segment_iterator
 		return *this + (-n);
 	}
 
+	const_segment_iterator& operator+=(difference_type n) {
+		*this = *this + n;
+		return *this;
+	}
+
 	friend
 	difference_type operator-(const const_segment_iterator& x, const const_segment_iterator& y) {
 		return difference_type(x.h - y.h);
@@ -517,7 +527,9 @@ struct segment_coordinate
 	pointer operator->() const { return pointer(&**this); }
 
 	segment_coordinate& operator++() {
-		if (_flat == --std::end(_seg)) {
+		flat_iterator __flat = std::end(_seg);
+		--__flat;
+		if (_flat == __flat) {
 			++_seg;
 			_flat = std::begin(_seg); // Reason why must "last" segment must be after the segment which holds the last element
 		}
@@ -533,7 +545,9 @@ struct segment_coordinate
 	}
 	segment_coordinate& operator--() {
 		if (_flat == std::begin(_seg)) {
-			_flat = --std::end(--_seg);
+			--_seg;
+			_flat = std::end(_seg);
+			--_flat;
 		}
 		else {
 			--_flat;
@@ -580,8 +594,8 @@ struct const_segment_coordinate
 	const_segment_coordinate(const _segment_coordinate& it) : _seg(const_segment_iterator(it._seg)), _flat(const_flat_iterator(it._flat)) {}
 	const_segment_coordinate(const_segment_iterator s, const_flat_iterator f) : _seg(s), _flat(f) {}
 	const_segment_coordinate(_segment_iterator s, _flat_iterator f) : _seg(const_segment_iterator(s)), _flat(const_flat_iterator(f)) {}
-	explicit const_segment_coordinate(const std::pair<const_segment_iterator, const_segment_iterator>& p) : _seg(p.first), _flat(p.second) {}
-	explicit const_segment_coordinate(std::pair<_segment_iterator, _flat_iterator>& p) : _seg(const_segment_iterator(p.first)), _flat(const_flat_iterator(p.second)) {}
+	explicit const_segment_coordinate(const std::pair<const_segment_iterator, const_flat_iterator>& p) : _seg(p.first), _flat(p.second) {}
+	explicit const_segment_coordinate(const std::pair<_segment_iterator, _flat_iterator>& p) : _seg(const_segment_iterator(p.first)), _flat(const_flat_iterator(p.second)) {}
 
 	friend
 	bool operator==(const const_segment_coordinate& x, const const_segment_coordinate& y) {
