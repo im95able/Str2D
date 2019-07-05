@@ -9,15 +9,19 @@ There are currently only `str2d::seg::multiset` and `str2d::seg::multimap` data 
 The reason for exlusion of `str2d::seg::set` and `str2d::seg::map` is the lack of time; they will probably be included some time later.
 
 # Implementation
-Segmented vector is not a difficult structure to imagine. In it, an `std::vector` is used as an index which holds pointers to constant capacity segments of memory, which are used to hold data. As said, the capacity of every segment is constant; the size on the other hand can vary.
-Each segments holds at least 'half the capacity' elements on it; except the first one, which can hold as many(less than capacity) or as little(more than 0) as it needs.
+Segmented vector is not a difficult structure to imagine. In it, an `std::vector` is used as an index which holds pointers to segments of memory, which are used to hold data. The capacity of every segment is constant; the size on the other hand can vary.
+Each segments holds at least half the capacity(limit) elements on it; except the first one, which can hold as many(less than capacity) or as little(more than 0) as it needs.
+
+If an element is inserted into a segment which isn't at full capacity or an element is erased from a segment which hold more than 'limit' elements, all actions are confined to that segment(which makes our structure vary cache friendly).
+
+If an element is inserted into a segment which is at full capacity or an element is erased from a segment with exactly 'limit' elements, either some rebalancing to neighbouring segments or an allocation of new segments has to occur.
 
 
 # Usage
 
 # Conclusion
-In a sense, the segmented vector extends the application of the flat vector. As benchmarks show, that extension has limits which have to be taken into the account. 
+In a sense, the segmented vector extends the application area of the 'flat' vector. As benchmarks show, that extension has limits which have to be taken into account. 
 
-If you oftenly erase and insert data that also has to be sorted, google's btree is probably a safe bet as a drop in replacement for the std map and set data structures. If on the other hand iterations dominate your execution or you constantly need to erase and insert entire ranges you could consider using the segmented data structures. 
+If you oftenly erase, insert and lookup data that also has to be sorted, google's btree is probably a safe bet as a drop in replacement for the std map and set data structures. If on the other hand iterations dominate execution, or you constantly need to erase and insert entire ranges, you could consider using the segmented data structures. 
 
-Needless to say, these opinions mean little in comparison to actual benchmarks.
+Needless to say, these opinions mean little in comparison to actual benchmarks of your code.
