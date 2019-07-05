@@ -15,7 +15,7 @@ Each segment holds at least half the capacity("limit") elements on it; except th
 
 If an element is inserted into a segment which isn't at full capacity or an element is erased from a segment which holds more than 'limit' elements, all actions are confined to that segment(which makes our structure vary cache friendly).
 
-If an element is inserted into a segment which is at full capacity or an element is erased from a segment with exactly 'limit' elements, either some rebalancing to neighbouring segments or an allocation of new segments have to occur.
+If an element is inserted into a segment which is at full capacity or an element is erased from a segment with exactly "limit" elements, either some rebalancing to neighbouring segments or an allocation of new segments have to occur.
 
 
 # Usage
