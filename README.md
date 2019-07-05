@@ -2,7 +2,7 @@
 Str2D is a library of 2D algorithms and data structures implemented in c++17 designed for manipulating large amounts of data. 
 
 While reading the books `Elements of Programming`(which now you can read for [free](http://componentsprogramming.com/elements-of-programming-authors-edition/)) and `From mathematics to generic programming` I stumbled upon a coordinate structure called the segmented iterator and realised I could implement it together with the data structures and algorithms needed for its use.  
-The second motivation was [this](https://www.google.com/url?sa=t&source=web&rct=j&url=https://people.freebsd.org/~lstewart/articles/cpumemory.pdf&ved=2ahUKEwirjajuv57jAhVrxKYKHbfvDV4QFjAAegQIAhAB&usg=AOvVaw3VY2lnCBaI-B57Dric65cb) paper which explained to me the inadequacy of data structures which utilize many single node allocations(e.g. `std::set` and like).
+The second motivation was [this](https://www.google.com/url?sa=t&source=web&rct=j&url=https://people.freebsd.org/~lstewart/articles/cpumemory.pdf&ved=2ahUKEwirjajuv57jAhVrxKYKHbfvDV4QFjAAegQIAhAB&usg=AOvVaw3VY2lnCBaI-B57Dric65cb) paper which explained to me the inadequacy of data structures which utilize many single node allocations(e.g. `std::set` and the like).
 
 At the heart of the library lies a data structure called `str2d::seg::vector`, the rest are build on top of it; hence I'll only focus on it. After you understand how the segmented vector is implemented you can easily deduce how to use it to implement `set`-like and `map`-like data structures.
 
