@@ -11,7 +11,7 @@ The reason for exlusion of `str2d::seg::set` and `str2d::seg::map` is the lack o
 
 # Implementation
 Segmented vector is not a difficult structure to imagine. In it, an `std::vector` is used as an index which holds pointers to segments of memory, which are used to hold data. The capacity of every segment is constant; the size on the other hand can vary.
-Each segment holds at least half the capacity("limit") elements on it; except the first one, which can hold as many(less than capacity) or as little(more than 0) as it needs.
+Each segment holds at least half the capacity("limit") elements on it, except the first one; it can hold as many(less than capacity) or as little(more than 0) as it needs.
 
 ## Insertion
 If an element is inserted into a segment which isn't at full capacity all actions are confined to that segment(which makes the structure vary cache friendly), otherwise an allocation of new segments have to occur and/or some rebalancing to neighbouring segments.
