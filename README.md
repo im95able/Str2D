@@ -10,20 +10,33 @@ There are currently only `str2d::seg::multiset` and `str2d::seg::multimap` data 
 The reason for exlusion of `str2d::seg::set` and `str2d::seg::map` is the lack of time; they will probably be included some time later.
 
 # Implementation
-Segmented vector is not a difficult structure to imagine. In it, an `std::vector` is used as an index which holds segment headers, structures holding pointers to segments of memory and possibly some meta data(Detailed explaination og segment headers will be given bellow). Those segments are where the data is actually held. The capacity of every segment is constant; the size on the other hand can vary.
+Segmented vector is not a difficult structure to imagine. In it, an `std::vector` is used as an index which holds segment headers, structures holding pointers to segments of memory and possibly some meta data(detailed explaination of segment headers will be given bellow). Those segments are where the data is actually held. The capacity of every segment is constant; the size on the other hand can vary.
 Each segment holds at least half the capacity("limit") elements on it, except the first one; it can hold as many(less than capacity) or as little(more than 0) as it needs.
 
+## Coordinate Structures/Iterators
+Segmented vector utilizes 3 kinds of coordinate structures : 
+1) Segment iterator - random access iterator that iterates over a range of segments. It can't be dereferenced like ordinary
+random access iterators; data inside it is accessed like it's accessed in a sequence container(e.g. `std::vector`), i.e. by
+using `begin` and `end` methods. Those methods of the segment iterator return a flat iterator.
+   
+2) Flat iterator - regular random access iterator; when dereferenced, returns the value type stored in the segmented vector.
+
+3) Segmented coordinate - regular bidirectinal iterator; when dereferenced, returns the value type stored in the segmented vector.
+This type is returned when `begin` and `end` functions of the segmented vector are called. Inside it holds a segment iterator and a flat iterator pointing inside that segment. It bassically works like the iterator of `std::deque`, except it's not random access. Its segment iterator is accessed through `segment` method, while its flat iterator is accessed via `flat` method of the coordinate.
+
+The algorithms in the library are aware of these coordinate structures, and use them in nesteed loops to decrease the number of checks needed in each iterations. If only segmented coordinate(regular bidirectional iterator) were used, each iteration of an algorithm would have to check whether it's reached the end of the segment and the end of the entire range. By using nested loops, only check for the end of the entire range is needed in each iteration.  
+
 ## Insertion
-If an element is inserted into a segment which isn't at full capacity all actions are confined to that segment(which makes the structure vary cache friendly), otherwise an allocation of new segments s to occur and/or rebalancing to neighbouring segments.
+If an element is inserted into a segment which isn't at full capacity all actions are confined to that segment(which makes the structure vary cache friendly), otherwise an allocation of new segments and/or rebalancing to neighbouring segments have to occur.
 In the case than new allocations happen, new segment headers have to be inserted into the index. Once the index becomes large enough, the operation of inserting into the index starts to affect performance. 
 
 ## Erasure
 If an element is erased from a segment which holds more than "limit" elements, all operations are confided to that segment; otherwise
-a deallocation of the segment has to occur nad/or rebalancing to neighbouring segments.
-
+a deallocation of the segment and/or rebalancing to neighbouring segments have to occur. It has the same good cache locality and same problems with the index size getting to big as the number of elements in the container increases.
 
 ## Lookup
-
+If the data isn't sorted, linear lookup is the best you can get. If it is, as it is for `str2d::seg::multiset` and `str2d::seg::multimap` binary search(`lower_bound`, `upper_bound`, `equal_range`) can be used. Considering the segmented coordinate is a bidirectional iterator, regular binary search wouldn't be a massive improvement over the linear search. Binary search algorithms inside the library are aware of the coordinate structures presented above and can use them to an advantage. Firstly, a binary search over a range of segments is used to locate the segment on which our element resides. After that segment had been located, another binary search
+(regular one) is used to locate the flat iterator of that segment which points to the element we were looking for.
 
 # Usage
 
