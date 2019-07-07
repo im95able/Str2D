@@ -29,7 +29,7 @@ This type is returned when `begin` and `end` functions of the segmented vector a
 The algorithms in the library are aware of these coordinate structures, and use them in nesteed loops to decrease the number of checks needed in each iterations. If only segmented coordinate(regular bidirectional iterator) were used, each iteration of an algorithm would have to check whether it's reached the end of the segment and the end of the entire range. By using nested loops, only check for the end of the entire range is needed in each iteration.  
 
 ## Insertion
-If an element is inserted into a segment which isn't at full capacity all actions are confined to that segment(which makes the structure vary cache friendly), otherwise an allocation of new segments and/or rebalancing to neighbouring segments have to occur.
+If an element is inserted into a segment which isn't at full capacity all actions are confined to that segment(which makes the structure very cache friendly), otherwise an allocation of new segments and/or rebalancing to neighbouring segments have to occur.
 In the case than new allocations happen, new segment headers have to be inserted into the index. Once the index becomes large enough, the operation of inserting into the index starts to affect performance. 
 
 ## Erasure
