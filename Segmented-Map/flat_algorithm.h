@@ -6,10 +6,11 @@
 #include <functional>
 #include "utility.h"
 
+namespace str2d
+{ 
+
 namespace flat
 {
-
-
 
 struct find_adaptor_linear
 {
@@ -18,7 +19,7 @@ struct find_adaptor_linear
 	// Pred models UnaryPredicate
 	// IteratorValueType<I> == Domain<Pred>
 	I operator()(I first, I last, Pred p) const {
-		return std::find_if(first, last, p);
+		return std::find_if_not(first, last, p);
 	}
 };
 
@@ -40,8 +41,8 @@ struct equal_range_adaptor_linear
 	// Cmp models StrictWeakOrdering
 	// IteratorValueType<I> == Domain<Cmp>
 	std::pair<I, I> operator()(I first, I last, const IteratorValueType<I>& x, Cmp cmp) const {
-		I lower_bound = std::find_if(first, last, lower_bound_predicate<IteratorValueType<I>, Cmp>(x, cmp));
-		return { lower_bound, std::find_if(lower_bound, last, upper_bound_predicate<IteratorValueType<I>, Cmp>(x, cmp)) };
+		I lower_bound = std::find_if_not(first, last, lower_bound_predicate<IteratorValueType<I>, Cmp>(x, cmp));
+		return { lower_bound, std::find_if_not(lower_bound, last, upper_bound_predicate<IteratorValueType<I>, Cmp>(x, cmp)) };
 	}
 };
 
@@ -588,7 +589,7 @@ template<typename I0, typename N, typename I1, typename Cmp>
 // I1 models InputIterator
 // Cmp models StrictWeakOrdering
 // Domain<Cmp> == ValueType<I0> == ValueType<I1>
-int compare_n(I0 first0, N n, I1 first1, Cmp cmp) {
+int lexicographical_compare_n(I0 first0, N n, I1 first1, Cmp cmp) {
 	while (n) {
 		if (cmp(*first0, *first1)) return -1;
 		if (cmp(*first1, *first0)) return 1;
@@ -604,7 +605,7 @@ template<typename I0, typename I1, typename Cmp>
 // I1 models InputIterator
 // Cmp models StrictWeakOrdering
 // Domain<Cmp> == ValueType<I0> == ValueType<I1>
-int compare(I0 first0, I0 last0, I1 first1, Cmp cmp) {
+int lexicographical_compare(I0 first0, I0 last0, I1 first1, Cmp cmp) {
 	while (first0 != last0) {
 		if (cmp(*first0, *first1)) return -1;
 		if (cmp(*first1, *first0)) return 1;
@@ -619,16 +620,16 @@ template<typename I0, typename N, typename I1>
 // N models Integer
 // I1 models InputIterator
 // ValueType<I0> == ValueType<I1>
-int compare_n(I0 first0, N n, I1 first1) {
-	return compare_n(first0, n, first1, std::less<>());
+int lexicographical_compare_n(I0 first0, N n, I1 first1) {
+	return lexicographical_compare_n(first0, n, first1, std::less<>());
 }
 
 template<typename I0, typename I1>
 // I0 models InputIterator
 // I1 models InputIterator
 // ValueType<I0> == ValueType<I1>
-int compare(I0 first0, I0 last0, I1 first1) {
-	return compare(first0, last0, first1, std::less<>());
+int lexicographical_compare(I0 first0, I0 last0, I1 first1) {
+	return lexicographical_compare(first0, last0, first1, std::less<>());
 }
 
 template<typename I0, typename N, typename I1, typename P>
@@ -691,3 +692,5 @@ bool equal(I0 first0, I0 last0, I1 first1) {
 
 
 } // namespace flat
+
+} // namespace str2d

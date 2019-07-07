@@ -9,17 +9,20 @@
 #include "utility.h"
 #include "flat_algorithm.h"
 
+namespace str2d
+{ 
+
 namespace seg
 {
 
 // Returns segment iterator of the given segment coordiante
 template<typename C>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 SegmentIterator<C> segment(C& c) { return c.segment(); }
 
 // Returns flat iterator of the given segment coordiante
 template<typename C>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 FlatIterator<C> flat(C& c) { return c.flat(); }
 
 template<typename I0, typename N, typename I1, typename C>
@@ -169,7 +172,7 @@ std::pair<I1, FlatIterator<I1>> copy(
 template<typename I, typename N, typename C>
 // I models InputIterator
 // N models Integer
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // IteratorValueType<I> == IteratorValueType<C>
 inline
 std::pair<I, C> copy_flat_n_seg(I first0, N n0, C first1) {
@@ -179,7 +182,7 @@ std::pair<I, C> copy_flat_n_seg(I first0, N n0, C first1) {
 
 template<typename I, typename C>
 // I models InputIterator
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // IteratorValueType<I> == IteratorValueType<C>
 inline
 std::pair<I, C> copy_flat_seg(I first0, I last0, C first1) {
@@ -189,7 +192,7 @@ std::pair<I, C> copy_flat_seg(I first0, I last0, C first1) {
 
 template<typename I, typename C>
 // I models SegmentIterator
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // IteratorValueType<I> == IteratorValueType<C>
 inline
 I copy_seg_flat(C first0, C last0, I first1) {
@@ -197,8 +200,8 @@ I copy_seg_flat(C first0, C last0, I first1) {
 }
 
 template<typename C0, typename C1>
-// C0 models SegmentCoordinate
-// C1 models SegmentCoordinate
+// C0 models SegmentedCoordinate
+// C1 models SegmentedCoordinate
 // IteratorValueType<C0> == IteratorValueType<C1>
 inline
 std::pair<C0, C1> copy(C0 first0, C0 last0, C1 first1) {
@@ -253,7 +256,7 @@ std::pair<I1, FlatIterator<I1>> move(
 template<typename I, typename N, typename C>
 // I models InputIterator
 // N models Integer
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // IteratorValueType<I> == IteratorValueType<C>
 inline
 std::pair<I, C> move_flat_n_seg(I first0, N n0, C first1) {
@@ -263,7 +266,7 @@ std::pair<I, C> move_flat_n_seg(I first0, N n0, C first1) {
 
 template<typename I, typename C>
 // I models InputIterator
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // IteratorValueType<I> == IteratorValueType<C>
 inline
 std::pair<I, C> move_flat_seg(I first0, I last0, C first1) {
@@ -273,7 +276,7 @@ std::pair<I, C> move_flat_seg(I first0, I last0, C first1) {
 
 template<typename I, typename C>
 // I models SegmentIterator
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // IteratorValueType<I> == IteratorValueType<C>
 inline
 I move_seg_flat(C first0, C last0, I first1) {
@@ -281,8 +284,8 @@ I move_seg_flat(C first0, C last0, I first1) {
 }
 
 template<typename C0, typename C1>
-// C0 models SegmentCoordinate
-// C1 models SegmentCoordinate
+// C0 models SegmentedCoordinate
+// C1 models SegmentedCoordinate
 // IteratorValueType<C0> == IteratorValueType<C1>
 inline
 std::pair<C0, C1> move(C0 first0, C0 last0, C1 first1) {
@@ -337,7 +340,7 @@ std::pair<I1, FlatIterator<I1>> move_uninitialized(
 template<typename I, typename N, typename C>
 // I models InputIterator
 // N models Integer
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // IteratorValueType<I> == IteratorValueType<C>
 inline
 std::pair<I, C> move_flat_n_seg_uninitialized(I first0, N n0, C first1) {
@@ -347,7 +350,7 @@ std::pair<I, C> move_flat_n_seg_uninitialized(I first0, N n0, C first1) {
 
 template<typename I, typename C>
 // I models InputIterator
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // IteratorValueType<I> == IteratorValueType<C>
 inline
 std::pair<I, C> move_flat_seg_uninitialized(I first0, I last0, C first1) {
@@ -357,7 +360,7 @@ std::pair<I, C> move_flat_seg_uninitialized(I first0, I last0, C first1) {
 
 template<typename I, typename C>
 // I models SegmentIterator
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // IteratorValueType<I> == IteratorValueType<C>
 inline
 I move_seg_flat_uninitialized(C first0, C last0, I first1) {
@@ -365,8 +368,8 @@ I move_seg_flat_uninitialized(C first0, C last0, I first1) {
 }
 
 template<typename C0, typename C1>
-// C0 models SegmentCoordinate
-// C1 models SegmentCoordinate
+// C0 models SegmentedCoordinate
+// C1 models SegmentedCoordinate
 // IteratorValueType<C0> == IteratorValueType<C1>
 inline
 std::pair<C0, C1> move_uninitialized(C0 first0, C0 last0, C1 first1) {
@@ -420,7 +423,7 @@ std::pair<I1, FlatIterator<I1>> copy_uninitialized(
 template<typename I, typename N, typename C>
 // I models InputIterator
 // N models Integer
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // IteratorValueType<I> == IteratorValueType<C>
 inline
 std::pair<I, C> copy_flat_n_seg_uninitialized(I first0, N n0, C first1) {
@@ -430,7 +433,7 @@ std::pair<I, C> copy_flat_n_seg_uninitialized(I first0, N n0, C first1) {
 
 template<typename I, typename C>
 // I models InputIterator
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // IteratorValueType<I> == IteratorValueType<C>
 inline
 std::pair<I, C> copy_flat_seg_uninitialized(I first0, I last0, C first1) {
@@ -440,7 +443,7 @@ std::pair<I, C> copy_flat_seg_uninitialized(I first0, I last0, C first1) {
 
 template<typename I, typename C>
 // I models SegmentIterator
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // IteratorValueType<I> == IteratorValueType<C>
 inline
 I copy_seg_flat_uninitialized(C first0, C last0, I first1) {
@@ -448,8 +451,8 @@ I copy_seg_flat_uninitialized(C first0, C last0, I first1) {
 }
 
 template<typename C0, typename C1>
-// C0 models SegmentCoordinate
-// C1 models SegmentCoordinate
+// C0 models SegmentedCoordinate
+// C1 models SegmentedCoordinate
 // IteratorValueType<C0> == IteratorValueType<C1>
 inline
 std::pair<C0, C1> copy_uninitialized(C0 first0, C0 last0, C1 first1) {
@@ -477,7 +480,7 @@ Proc for_each(I first_seg, FlatIterator<I> first_flat, I last_seg, FlatIterator<
 }
 
 template<typename C, typename Proc>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // Proc models Procedure
 // Domain<Proc> == IteratorValueType<C>
 inline
@@ -497,7 +500,7 @@ void fill(I first_seg, FlatIterator<I> first_flat, I last_seg, FlatIterator<I> l
 }
 
 template<typename C, typename T>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // Proc models Procedure
 // T == IteratorValueType<I>
 inline
@@ -517,7 +520,7 @@ void fill_uninitialized(I first_seg, FlatIterator<I> first_flat, I last_seg, Fla
 }
 
 template<typename C, typename T>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // Proc models Procedure
 // T == IteratorValueType<I>
 inline
@@ -549,7 +552,7 @@ std::pair<I, FlatIterator<I>> find_if_not(I first_seg, FlatIterator<I> first_fla
 }
 
 template<typename C, typename Pred>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // Pred models UnaryPredicate
 // Domain<Pred> == IteratorValueType<C>
 inline
@@ -558,14 +561,13 @@ C find_if(C first, C last, Pred p) {
 }
 
 template<typename C, typename Pred>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // Pred models UnaryPredicate
 // Domain<Pred> == IteratorValueType<C>
 inline
 C find_if_not(C first, C last, Pred p) {
 	return C(seg::find_if_not(segment(first), flat(first), segment(last), flat(last), p));
 }
-
 
 template<typename I, typename Pred, typename Proc = flat::find_adaptor_binary>
 // I models SegmentIterator
@@ -625,7 +627,7 @@ std::pair<I, FlatIterator<I>> partition_point_combined(
 }
 
 template<typename C, typename Pred, typename Proc = flat::find_adaptor_binary>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // Pred models UnaryPredicate
 // Domain<Pred> == IteratorValueType<C>
 // Proc models Procedure
@@ -639,7 +641,7 @@ C partition_point(C first, C last, Pred p, Proc pr = Proc{}) {
 }
 
 template<typename C, typename Pred, typename N, typename Proc = flat::find_adaptor_binary>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // Pred models UnaryPredicate
 // Domain<Pred> == IteratorValueType<C>
 // N models Integer
@@ -668,6 +670,7 @@ std::pair<I, FlatIterator<I>> lower_bound(
 	return seg::partition_point(first_seg, first_flat, last_seg, last_flat, lower_bound_predicate(x, cmp), pr);
 }
 
+
 template<typename I, typename Cmp, typename N, typename Proc = flat::find_adaptor_binary>
 // I models SegmentIterator
 // Cmp models StrictWeakOrdering
@@ -693,7 +696,7 @@ std::pair<I, FlatIterator<I>> lower_bound_combined(
 }
 
 template<typename C, typename Cmp, typename Proc = flat::find_adaptor_binary>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // Cmp models StrictWeakOrdering
 // Domain<Cmp> == IteratorValueType<I>
 // Proc models Procedure
@@ -707,7 +710,7 @@ C lower_bound(C first, C last, const IteratorValueType<C>& x, Cmp cmp, Proc pr =
 }
 
 template<typename C, typename Cmp, typename N, typename Proc = flat::find_adaptor_binary>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // Cmp models StrictWeakOrdering
 // Domain<Cmp> == IteratorValueType<I>
 // N models Integer
@@ -721,6 +724,17 @@ C lower_bound_combined(C first, C last, const IteratorValueType<C>& x, Cmp cmp, 
 	return C(seg::lower_bound_combined(segment(first), flat(first), segment(last), flat(last), x, cmp, n, pr));
 }
 
+
+
+template<typename I, typename Cmp>
+// I models SegmentIterator
+// Cmp models StrictWeakOrdering
+// Domain<Cmp> == IteratorValueType<I>
+inline
+std::pair<I, FlatIterator<I>> upper_bound_linear(
+	I first_seg, FlatIterator<I> first_flat, I last_seg, FlatIterator<I> last_flat, const IteratorValueType<I>& x, Cmp cmp) {
+	return seg::partition_point_linear(first_seg, first_flat, last_seg, last_flat, upper_bound_predicate(x, cmp));
+}
 
 template<typename I, typename Cmp, typename Proc = flat::find_adaptor_binary>
 // I models SegmentIterator
@@ -760,8 +774,9 @@ std::pair<I, FlatIterator<I>> upper_bound_combined(
 	return seg::partition_point_combined(first_seg, first_flat, last_seg, last_flat, upper_bound_predicate(x, cmp), n, pr);
 }
 
+
 template<typename C, typename Cmp, typename Proc = flat::find_adaptor_binary>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // Cmp models StrictWeakOrdering
 // Domain<Cmp> == IteratorValueType<I>
 // Proc models Procedure
@@ -775,7 +790,7 @@ C upper_bound(C first, C last, const IteratorValueType<C>& x, Cmp cmp, Proc pr =
 }
 
 template<typename C, typename Cmp, typename N, typename Proc = flat::find_adaptor_binary>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // Cmp models StrictWeakOrdering
 // Domain<Cmp> == IteratorValueType<I>
 // N models Integer
@@ -788,6 +803,7 @@ inline
 C upper_bound_combined(C first, C last, const IteratorValueType<C>& x, Cmp cmp, N n, Proc pr = Proc{}) {
 	return C(seg::upper_bound_combined(segment(first), flat(first), segment(last), flat(last), x, cmp, n, pr));
 }
+
 
 template<typename I, typename Cmp, typename Proc = flat::equal_range_adaptor_binary>
 // I models SegmentIterator
@@ -828,7 +844,7 @@ pair2<I, FlatIterator<I>> equal_range(
 }
 
 template<typename C, typename Cmp, typename Proc = flat::equal_range_adaptor_binary>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // Cmp models StrictWeakOrdering
 // Domain<Cmp> == IteratorValueType<I>
 // Proc models Procedure
@@ -857,7 +873,7 @@ void destruct(I first_seg, FlatIterator<I> first_flat, I last_seg, FlatIterator<
 }
 
 template<typename C>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 inline
 void destruct(C first, C last) {
 	return seg::destruct(segment(first), flat(first), segment(last), flat(last));
@@ -889,7 +905,7 @@ bool equal_seg_flat(I0 first_seg0, FlatIterator<I0> first_flat0, I0 last_seg0, F
 }
 
 template<typename C, typename I, typename P>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // I models InputIterator
 // P models EquivalenceRelation
 // Domain<P> == IteratorValueType<C> == IteratorValueType<I>
@@ -898,7 +914,7 @@ bool equal_seg_flat(C first0, C last0, I first1, P p) {
 }
 
 template<typename C, typename I>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // I models InputIterator
 // IteratorValueType<C> == IteratorValueType<I>
 bool equal_seg_flat(C first0, C last0, I first1) {
@@ -941,7 +957,7 @@ bool equal_flat_n_seg(I0 first0, N n, I1 first_seg1, FlatIterator<I1> first_flat
 template<typename I, typename N, typename C, typename P>
 // I0 models ForwardIterator
 // N models Integer
-// I1 models SegmentCoordinate
+// I1 models SegmentedCoordinate
 // P models EquivalenceRelation
 // Domain<P> == IteratorValueType<I0> == IteratorValueType<I1>
 bool equal_flat_n_seg(I first0, N n, C first1, C last1, P p) {
@@ -951,7 +967,7 @@ bool equal_flat_n_seg(I first0, N n, C first1, C last1, P p) {
 template<typename I, typename N, typename C>
 // I0 models ForwardIterator
 // N models Integer
-// I1 models SegmentCoordinate
+// I1 models SegmentedCoordinate
 // IteratorValueType<I0> == IteratorValueType<I1>
 // IteratorValueType<I0> models Regular
 bool equal_flat_n_seg(I first0, N n, C first1, C last1) {
@@ -998,12 +1014,12 @@ template<typename I0, typename I1>
 // I1 models SegmentIterator
 // IteratorValueType<I0> == IteratorValueType<I1>
 bool equal(I0 first_seg0, FlatIterator<I0> first_flat0, I0 last_seg0, FlatIterator<I0> last_flat0, I1 first_seg1, FlatIterator<I1> first_flat1) {
-	return seg::equal(first_seg0, first_flat0, last_seg0, last_flat1, first_seg1, first_flat1, std::equal_to<>());
+	return seg::equal(first_seg0, first_flat0, last_seg0, last_flat0, first_seg1, first_flat1, std::equal_to<>());
 }
 
 template<typename C0, typename C1, typename P>
-// C0 models SegmentCoordinate
-// C1 models SegmentCoordinate
+// C0 models SegmentedCoordinate
+// C1 models SegmentedCoordinate
 // P models EquivalenceRelation
 // Domain<P> == IteratorValueType<C0> == IteratorValueType<C1>
 bool equal(C0 first0, C0 last0, C1 first1, P p) {
@@ -1011,8 +1027,8 @@ bool equal(C0 first0, C0 last0, C1 first1, P p) {
 }
 
 template<typename C0, typename C1>
-// C0 models SegmentCoordinate
-// C1 models SegmentCoordinate
+// C0 models SegmentedCoordinate
+// C1 models SegmentedCoordinate
 // P models EquivalenceRelation
 // Domain<P> == IteratorValueType<C0> == IteratorValueType<C1>
 bool equal(C0 first0, C0 last0, C1 first1) {
@@ -1040,7 +1056,7 @@ template<typename I0, typename N, typename I1, typename Cmp>
 // I1 models SegmentIterator
 // Cmp models StrictWeakOrdering
 // Domain<P> == IteratorValueType<I0> == IteratorValueType<I1>
-int compare_flat_n_seg(I0 first0, N n0, I1 first_seg1, I1 first_flat1, I1 last_seg1, I1 last_flat1, Cmp cmp) {
+int lexicographical_compare_flat_n_seg(I0 first0, N n0, I1 first_seg1, I1 first_flat1, I1 last_seg1, I1 last_flat1, Cmp cmp) {
 	while (first_seg1 != last_seg1) {
 		N n1 = static_cast<N>(std::end(first_seg1) - first_flat1);
 		int r = flat::compare_n(first0, std::min(n0, n1), first_flat1, cmp);
@@ -1062,7 +1078,7 @@ template<typename I0, typename I1, typename Cmp>
 // I1 models SegmentIterator
 // Cmp models StrictWeakOrdering
 // Domain<P> == IteratorValueType<I0> == IteratorValueType<I1>
-int compare(
+int lexicographical_compare(
 	I0 first_seg0,
 	FlatIterator<I0> first_flat0,
 	I0 last_seg0,
@@ -1081,7 +1097,7 @@ int compare(
 	while (first_seg0 != last_seg0 && first_seg1 != last_seg0) {
 		Diff0 n0 = std::end(first_seg0) - first_flat0;
 		Diff0 n1 = static_cast<Diff0>(std::end(first_seg1) - first_flat1);
-		int r = flat::equal_n(first0, std::min(n0, n1), first_flat1);
+		int r = flat::equal_n(first_flat0, std::min(n0, n1), first_flat1);
 		if (r != 0)
 			return r;
 		if (n0 < n1) {
@@ -1099,13 +1115,13 @@ int compare(
 		Diff0 n0 = last_flat0 - first_flat0;
 		if (first_seg1 == last_seg1) {
 			Diff0 n1 = static_cast<Diff0>(last_flat1 - first_flat1);
-			int r = flat::compare_n(first0, std::min(n0, n1), first_flat1, cmp);
+			int r = flat::lexicographical_compare_n(first_flat0, std::min(n0, n1), first_flat1, cmp);
 			return r == 0 ? n0 < n1 : r;
 		}
-		return seg::compare_flat_n_seg(first_flat0, n0, first_seg1, first_flat1, last_seg1, last_flat1, cmp);
+		return seg::lexicographical_compare_flat_n_seg(first_flat0, n0, first_seg1, first_flat1, last_seg1, last_flat1, cmp);
 	}
 	else {
-		return -seg::compare_flat_n_seg(first_flat1, n1, first_seg0, first_flat0, last_seg0, last_flat0, cmp);
+		return -seg::lexicographical_compare_flat_n_seg(first_flat1, last_flat1 - first_flat1, first_seg0, first_flat0, last_seg0, last_flat0, cmp);
 	}
 }
 
@@ -1113,7 +1129,7 @@ template<typename I0, typename I1>
 // I0 models SegmentIterator
 // I1 models SegmentIterator
 // IteratorValueType<I0> == IteratorValueType<I1>
-int compare(
+int lexicographical_compare(
 	I0 first_seg0,
 	FlatIterator<I0> first_flat0,
 	I0 last_seg0,
@@ -1122,26 +1138,26 @@ int compare(
 	FlatIterator<I1> first_flat1,
 	I1 last_seg1,
 	FlatIterator<I1> last_flat1) {
-	return seg::compare(first_seg0, first_flat0, last_seg0, last_flat0, first_seg1, first_flat1, last_seg1, last_flat1, std::less<>());
+	return seg::lexicographical_compare(first_seg0, first_flat0, last_seg0, last_flat0, first_seg1, first_flat1, last_seg1, last_flat1, std::less<>());
 }
 
 template<typename C0, typename C1, typename Cmp>
-// C0 models SegmentCoordinate
-// C1 models SegmentCoordinate
+// C0 models SegmentedCoordinate
+// C1 models SegmentedCoordinate
 // Cmp models StrictWeakOrdering
 // Domain<Cmp> == IteratorValueType<I0> == IteratorValueType<I1>
-int compare(
+int lexicographical_compare(
 	C0 first0, C0 last0, C1 first1, C1 last1, Cmp cmp) {
-	return seg::compare(segment(first0), flat(first0), segment(last0), flat(last0), segment(first1), flat(first1), segment(last1), flat(last1), cmp);
+	return seg::lexicographical_compare(segment(first0), flat(first0), segment(last0), flat(last0), segment(first1), flat(first1), segment(last1), flat(last1), cmp);
 }
 
 template<typename C0, typename C1>
-// C0 models SegmentCoordinate
-// C1 models SegmentCoordinate
+// C0 models SegmentedCoordinate
+// C1 models SegmentedCoordinate
 // IteratorValueType<I0> == IteratorValueType<I1>
-int compare(
+int lexicographical_compare(
 	C0 first0, C0 last0, C1 first1, C1 last1) {
-	return seg::compare(first0, last0, first1, last1, std::less<>());
+	return seg::lexicographical_compare(first0, last0, first1, last1, std::less<>());
 }
 
 
@@ -1159,7 +1175,7 @@ std::size_t distance(I first_seg, FlatIterator<I> first_flat, I last_seg, FlatIt
 }
 
 template<typename C>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 IteratorDifferenceType<C> distance(C first, C last) {
 	return static_cast<IteratorDifferenceType<C>>(seg::distance(segment(first), flat(first), segment(last), flat(last)));
 }
@@ -1184,7 +1200,7 @@ std::pair<I, FlatIterator<I>> successor(I first_seg, FlatIterator<I> first_flat,
 }
 
 template<typename C, typename N>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // N models Integer
 inline
 C successor(C first, N n) {
@@ -1210,7 +1226,7 @@ std::pair<I, FlatIterator<I>> predecessor(I last_seg, FlatIterator<I> last_flat,
 }
 
 template<typename C, typename N>
-// C models SegmentCoordinate
+// C models SegmentedCoordinate
 // N models Integer
 inline
 C predecessor(C first, N n) {
@@ -1219,3 +1235,4 @@ C predecessor(C first, N n) {
 
 } // namespace seg
 
+} // namespace str2d

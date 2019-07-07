@@ -7,6 +7,8 @@
 #include "seg_container_base.h"
 #include "utility.h"
 
+namespace str2d
+{ 
 
 namespace seg 
 {
@@ -1104,7 +1106,7 @@ template<typename I, typename A>
 inline
 void erase_headers_and_deallocate_areas(
 	I& used_first, I& used_last, A& alloc, I& firste, I laste) {
-	std::for_each(firste, laste, deallocate_area(alloc));
+	std::for_each(firste, laste, deallocate_area<A>(alloc));
 	std::tie(used_first, used_last, firste) = erase_flat(used_first, used_last, firste, laste);
 }
 
@@ -1121,7 +1123,6 @@ std::pair<Iterator<C>, Iterator<C>> middle_edges(C& index_container) {
 template<typename T, std::size_t C, typename A>
 // T models
 // A models Allocator
-// ValueType<A> == T
 class big_header_index
 {
 public:
@@ -1134,7 +1135,7 @@ public:
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 	using size_type = SizeType<container>;
-	using allocator = A;
+	using allocator = AllocatorRebindType<A, area_type>;
 	constexpr static size_t segment_capacity = header_type::capacity;
 
 	container headers;
@@ -1158,7 +1159,7 @@ public:
 
 	void destroy() {
 		if(edge_left != edge_right)
-			std::for_each(edge_left, edge_right - 1, deallocate_area(alloc));
+			std::for_each(edge_left, edge_right - 1, deallocate_area<allocator>(alloc));
 	}
 
 	void _init() {
@@ -1263,7 +1264,6 @@ public:
 template<typename T, std::size_t C, typename A>
 // T models
 // A models Allocator
-// ValueType<A> == T
 class small_header_index
 {
 public:
@@ -1276,7 +1276,7 @@ public:
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 	using size_type = SizeType<container>;
-	using allocator = A;
+	using allocator = AllocatorRebindType<A, area_type>;
 	constexpr static size_t segment_capacity = header_type::capacity;
 
 	container headers;
@@ -1299,7 +1299,7 @@ public:
 	}
 
 	void destroy() {
-		std::for_each(edge_left, edge_right, deallocate_area(alloc));
+		std::for_each(edge_left, edge_right, deallocate_area<allocator>(alloc));
 	}
 
 	void _init() {
@@ -1400,32 +1400,324 @@ public:
 };
 
 
-template<typename K, typename M, typename Cmp, typename I, typename CmpAdapt, typename VK>
+
+
+
+
+
+
+
+template<typename T, typename I>
 // I models SegmentIndex
+class vector_tmp
+{
+public:
+	using index = I;
+	using allocator = AllocatorType<index>;
+	using value_type = ValueType<index>;
+	using header_iterator = Iterator<index>;
+	using const_header_iterator = ConstIterator<index>;
+	using flat_iterator = value_type*;
+	using const_flat_iterator = value_type *;
+	using segment_iterator = seg::segment_iterator<header_iterator>;
+	using const_segment_iterator = seg::const_segment_iterator<header_iterator, const_header_iterator>;
+	using segmented_coordinate = seg::segmented_coordinate<segment_iterator, const_segment_iterator>;
+	using const_segmented_coordinate = seg::const_segmented_coordinate<segment_iterator, const_segment_iterator>;
+	using iterator = segmented_coordinate;
+	using size_type = seg::size_t;
+	using find_adaptor = flat::find_adaptor_binary;
+	using equal_range_find_adaptor = flat::equal_range_adaptor_binary;
+
+	static segmented_coordinate coordinate_from_const(const_segmented_coordinate it) {
+		return segmented_coordinate(segment_iterator_from_const(it._seg), const_cast<flat_iterator>(it._flat));
+	}
+
+private:
+	index in;
+	size_type s;
+
+	segment_iterator segment_iterator_from_const(const_segment_iterator it) {
+		return segment_iterator(flat::successor(std::begin(in), it.h - std::cbegin(in)));
+	}
+	std::pair<header_iterator, size_t> header_from_coordinate(segmented_coordinate c) {
+		if (c._seg.h != in.end() || empty())
+			return { header_iterator(c._seg.h), static_cast<size_t>(c._flat - seg::begin(*c._seg.h)) };
+		return { header_iterator(c._seg.h - 1), seg::size(*(c._seg.h - 1)) };
+	}
+
+
+	const_segmented_coordinate coordinate_unguarded(const std::pair<header_iterator, size_t>& r) const {
+		if (r.second == seg::size(*r.first))
+			return const_segmented_coordinate(const_segment_iterator(r.first + 1), seg::begin(*(r.first + 1)));
+		return const_segmented_coordinate(const_segment_iterator(r.first), flat::successor(seg::cbegin(*r.first), r.second));
+	}
+	segmented_coordinate coordinate_unguarded(const std::pair<header_iterator, size_t>& r) {
+		if (r.second == seg::size(*r.first))
+			return segmented_coordinate(segment_iterator(r.first + 1), seg::begin(*(r.first + 1)));
+		return segmented_coordinate(segment_iterator(r.first), flat::successor(seg::begin(*r.first), r.second));
+	}
+	const_segmented_coordinate coordinate(const std::pair<header_iterator, size_t>& r) const {
+		if (r.first == std::end(in))
+			return const_segmented_coordinate(const_segment_iterator(r.first), seg::begin(*r.first));
+		return coordinate_unguarded(r);
+	}
+	segmented_coordinate coordinate(const std::pair<header_iterator, size_t>& r) {
+		if (r.first == std::end(in))
+			return segmented_coordinate(segment_iterator(r.first), seg::begin(*r.first));
+		return coordinate_unguarded(r);
+	}
+
+
+	segmented_coordinate __insert(std::pair<header_iterator, seg::size_t> it) {
+		segmented_coordinate _it = coordinate_unguarded(seg::insert_to_segment_range(in, it.first, it.second, 1).first);
+		s = s + 1;
+		return _it;
+	}
+	std::pair<segmented_coordinate, segmented_coordinate> __insert(std::pair<header_iterator, seg::size_t> it, size_type n) {
+		auto [_begin, _end] = seg::insert_to_segment_range(in, it.first, it.second, static_cast<seg::size_t>(n));
+		s = s + n;
+		return { coordinate_unguarded(_begin), coordinate_unguarded(_end) };
+	}
+
+
+	segmented_coordinate _insert(segmented_coordinate it) {
+		return __insert(header_from_coordinate(it));
+	}
+	std::pair<segmented_coordinate, segmented_coordinate> _insert(segmented_coordinate it, size_type n) {
+		return __insert(header_from_coordinate(it), n);
+	}
+
+
+	segmented_coordinate __erase(std::pair<header_iterator, seg::size_t> left, std::pair<header_iterator, seg::size_t> right) {
+		auto [it, i, _s] = seg::erase_from_segment_range(in, left.first, left.second, right.first, right.second);
+		s = s - _s;
+		return coordinate(std::make_pair(it, i));
+	}
+
+
+	segmented_coordinate _erase(segmented_coordinate left, segmented_coordinate right) {
+		return __erase(header_from_coordinate(left), header_from_coordinate(right));
+	}
+
+
+	segmented_coordinate _erase(segmented_coordinate left) {
+		return __erase(header_from_coordinate(left), header_from_coordinate(successor(left, 1)));
+	}
+
+	void copy_from(const vector_tmp& other) {
+		s = other.s;
+		seg::copy(std::begin(other), std::end(other), _insert(std::begin(in), s));
+	}
+
+public:
+	vector_tmp(allocator&& alloc = allocator()) : in(std::move(alloc)) {}
+	vector_tmp(vector_tmp&& other) : in(std::move(other.in)), s(std::move(other.s)), cmp(std::move(other.cmp)) {}
+	vector_tmp(const allocator& alloc) : in(alloc) {}
+	vector_tmp(const vector_tmp& other) : in(other.in), s(other.s), cmp(other.cmp) { copy_from(other); }
+	~vector_tmp() { clear(); }
+
+	vector_tmp& operator=(vector_tmp&& other) {
+		clear();
+		in = std::move(other.in);
+		s = std::move(other.s);
+		return *this;
+	}
+	vector_tmp& operator=(const vector_tmp& other) {
+		clear();
+		copy_from();
+		return *this;
+	}
+
+	friend
+	bool operator==(const vector_tmp& x, const vector_tmp& y) {
+		if (x.size() != y.size()) return false;
+		return seg::equal(std::cbegin(x), std::cend(x), std::cbegin(y));
+	}
+	friend
+	bool operator!=(const vector_tmp& x, const vector_tmp& y) {
+		return !(x == y);
+	}
+
+	friend
+	bool operator<(const vector_tmp& x, const vector_tmp& y) {
+		return seg::lexicographical_compare(std::cbegin(x), std::cend(x), std::cbegin(y), std::cend(y)) < 0;
+	}
+	friend
+	bool operator>(const vector_tmp& x, const vector_tmp& y) {
+		return y < x;
+	}
+	friend
+	bool operator<=(const vector_tmp& x, const vector_tmp& y) {
+		return !(y < x);
+	}
+	friend
+	bool operator>=(const vector_tmp& x, const vector_tmp& y) {
+		return !(x < y);
+	}
+
+	bool empty() const { return in.empty(); }
+
+	size_type size() const { return s; }
+
+	void swap(index& _in, size_type& _s) {
+		std::swap(_in, in);
+		std::swap(_s, s);
+	}
+
+	segmented_coordinate begin() {
+		segment_iterator first_seg = segment_iterator(std::begin(in));
+		return segmented_coordinate(first_seg, std::begin(first_seg));
+	}
+	segmented_coordinate end() {
+		segment_iterator last_seg = segment_iterator(std::end(in));
+		return segmented_coordinate(last_seg, std::begin(last_seg));
+	}
+	const_segmented_coordinate cbegin() {
+		const_segment_iterator first_seg = const_segment_iterator(std::begin(in));
+		return const_segmented_coordinate(first_seg, const_flat_iterator(std::begin(first_seg)));
+	}
+	const_segmented_coordinate cend() {
+		const_segment_iterator last_seg = const_segment_iterator(std::end(in));
+		return const_segmented_coordinate(last_seg, const_flat_iterator(std::begin(last_seg)));
+	}
+	const_segmented_coordinate begin() const { return cbegin(); }
+	const_segmented_coordinate end() const { return cend(); }
+
+	template<typename I>
+	// I models InnputIterator
+	// IteratorValueType<I> == value_type
+	std::pair<segmented_coordinate, segmented_coordinate> insert_move(segmented_coordinate it, I first, size_type n) {
+		std::pair<segmented_coordinate, segmented_coordinate> r = _insert(it, static_cast<seg::size_t>(n));
+		seg::move_flat_n_seg_uninitialized(first, n, r.first);
+		return r;
+	}
+
+	template<typename I>
+	// I models InnputIterator
+	// IteratorValueType<I> == value_type
+	std::pair<segmented_coordinate, segmented_coordinate> insert(segmented_coordinate it, I first, size_type n) {
+		std::pair<segmented_coordinate, segmented_coordinate> r = _insert(it, static_cast<seg::size_t>(n));
+		seg::copy_flat_n_seg_uninitialized(first, n, r.first);
+		return r;
+	}
+
+	segmented_coordinate insert(segmented_coordinate it, value_type&& v) {
+		it = _insert(it);
+		construct_at(it, std::move(v));
+		return it;
+	}
+
+	segmented_coordinate insert(segmented_coordinate it, const value_type& v) {
+		it = _insert(it);
+		construct_at(it, v);
+		return it;
+	}
+
+	template<typename I>
+	// I models InnputIterator
+	// IteratorValueType<I> == value_type
+	std::pair<segmented_coordinate, segmented_coordinate> insert_move(const_segmented_coordinate it, I first, size_type n) {
+		return insert_move(coordinate_from_const(it), first, n);
+	}
+
+	template<typename I>
+	// I models InnputIterator
+	// IteratorValueType<I> == value_type
+	std::pair<segmented_coordinate, segmented_coordinate> insert(const_segmented_coordinate it, I first, size_type n) {
+		return insert(coordinate_from_const(it), first, n);
+	}
+
+	segmented_coordinate insert(const_segmented_coordinate it, value_type&& v) {
+		return insert(coordinate_from_const(it), std::move(v));
+	}
+	segmented_coordinate insert(const_segmented_coordinate it, const value_type& v) {
+		return insert(coordinate_from_const(it), v);
+	}
+
+	segmented_coordinate erase(segmented_coordinate first, segmented_coordinate last) {
+		return _erase(first, last);
+	}
+	segmented_coordinate erase(segmented_coordinate it) {
+		return _erase(it);
+	}
+
+	void clear() {
+		_erase(begin(), end());
+		s = 0;
+	}
+
+	segmented_coordinate erase(const_segmented_coordinate first, const_segmented_coordinate last) {
+		return erase(coordinate_from_const(first), coordinate_from_const(last));
+	}
+	segmented_coordinate erase(const_segmented_coordinate it) {
+		return erase(coordinate_from_const(it));
+	}
+};
+
+
+constexpr segment_size_t default_segment_capacity = 2048u;
+
+template<typename T>
+constexpr segment_size_t default_capacity_for_type() {
+	constexpr segment_size_t size = sizeof(T);
+	constexpr segment_size_t capacity = default_segment_capacity / size;
+	return capacity > 2 ? capacity : 2;
+}
+
+template<typename T, std::size_t C, typename A>
+using vector_big_header = vector_tmp<T, big_header_index<T, C, A>>;
+
+template<typename T, std::size_t C, typename A>
+using vector_small_header = vector_tmp<T, small_header_index<T, C, A>>;
+
+template<typename T, std::size_t C, typename A>
+using vector = vector_big_header<T, C, A>;
+
+
+
+
+template<typename K, typename M, typename Cmp, typename Vec, typename CmpAdapt, typename VK, typename FAdaptor, typename EqualRangeFAdaptor>
+// Vec models SegmentedVector
 // Cmp models StrictWeakOrdering
 // Domain<Cmp> == K
 // S models BoundedSearch
-class container
+class associative_container_tmp
 {
 public:
 	using value_to_key = VK;
 	using compare_adaptor = CmpAdapt;
 	using key_type = K;
 	using mapped_type = M;
-	using index = I;
+	using vector = Vec;
 	using key_compare = Cmp;
-	using allocator = AllocatorType<index>;
-	using value_type = ValueType<index>;
-	using header_iterator = Iterator<index>;
-	using const_header_iterator = ConstIterator<index>;
-	using flat_iterator = value_type *;
-	using const_flat_iterator = value_type *;
-	using segment_iterator = seg::segment_iterator<header_iterator>;
-	using const_segment_iterator = seg::const_segment_iterator<header_iterator, const_header_iterator>;
-	using segment_coordinate = seg::segment_coordinate<segment_iterator, const_segment_iterator>;
-	using const_segment_coordinate = seg::const_segment_coordinate<segment_iterator, const_segment_iterator>;
-	using iterator = segment_coordinate;
+	using index = Index<vector>;
+	using allocator = AllocatorType<vector>;
+	using value_type = ValueType<vector>;
+	using flat_iterator = FlatIterator<vector>;
+	using const_flat_iterator = ConstFlatIterator<vector>;
+	using segment_iterator = SegmentIterator<vector>;
+	using const_segment_iterator = ConstSegmentIterator<vector>;
+	using segmented_coordinate = SegmentedCoordinate<vector>;
+	using const_segmented_coordinate = ConstSegmentedCoordinate<vector>;
+	using iterator = segmented_coordinate;
 	using size_type = seg::size_t;
+	using find_adaptor = FAdaptor;
+	using equal_range_find_adaptor = EqualRangeFAdaptor;
+
+private:
+	struct _move {
+		template<typename T>
+		T&& operator()(T& x) const {
+			return std::move(x);
+		}
+	};
+
+	struct _copy {
+		template<typename T>
+		const T& operator()(const T& x) const {
+			return x;
+		}
+	};
 
 	struct equal_adaptor
 	{
@@ -1437,259 +1729,217 @@ public:
 		}
 	};
 
-private:
-	index in;
-	size_type s;
+	vector vec;
 	compare_adaptor cmp;
 
-	segment_iterator segment_iterator_from_const(const_segment_iterator it) {
-		return segment_iterator(flat::successor(std::begin(in), it.h - std::cbegin(in)));
-	}
-	segment_coordinate coordinate_from_const(const_segment_coordinate it) {
-		return segment_coordinate(segment_iterator_from_const(it._seg), const_cast<flat_iterator>(it._flat));
-	}
-	std::pair<header_iterator, size_t> header_from_coordinate(segment_coordinate c) {
-		if (c._seg.h != in.end() || empty())
-			return { header_iterator(c._seg.h), static_cast<size_t>(c._flat - seg::begin(*c._seg.h)) };
-		return { header_iterator(c._seg.h - 1), seg::size(*(c._seg.h - 1)) };
-	}
+	template<typename I, typename C>
+	void insert_sorted(segmented_coordinate it, I first, size_type n, C c) {
+		if (n == 0) return;
 
-
-	const_segment_coordinate coordinate_unguarded(const std::pair<header_iterator, size_t>& r) const {
-		if (r.second == seg::size(*r.first))
-			return const_segment_coordinate(const_segment_iterator(r.first + 1), seg::begin(*(r.first + 1)));
-		return const_segment_coordinate(const_segment_iterator(r.first), flat::successor(seg::cbegin(*r.first), r.second));
-	}
-	segment_coordinate coordinate_unguarded(const std::pair<header_iterator, size_t>& r) {
-		if (r.second == seg::size(*r.first))
-			return segment_coordinate(segment_iterator(r.first + 1), seg::begin(*(r.first + 1)));
-		return segment_coordinate(segment_iterator(r.first), flat::successor(seg::begin(*r.first), r.second));
-	}
-	const_segment_coordinate coordinate(const std::pair<header_iterator, size_t>& r) const {
-		if (r.first == std::end(in))
-			return const_segment_coordinate(const_segment_iterator(r.first), seg::begin(*r.first));
-		return coordinate_unguarded(r);
-	}
-	segment_coordinate coordinate(const std::pair<header_iterator, size_t>& r) {
-		if (r.first == std::end(in))
-			return segment_coordinate(segment_iterator(r.first), seg::begin(*r.first));
-		return coordinate_unguarded(r);
-	}
-
-
-	segment_coordinate __insert(std::pair<header_iterator, seg::size_t> it) {
-		segment_coordinate _it = coordinate_unguarded(seg::insert_to_segment_range(in, it.first, it.second, 1).first);
-		s = s + 1;
-		return _it;
-	}
-	std::pair<segment_coordinate, segment_coordinate> __insert(std::pair<header_iterator, seg::size_t> it, size_type n) {
-		auto [_begin, _end] = seg::insert_to_segment_range(in, it.first, it.second, static_cast<seg::size_t>(n));
-		s = s + n;
-		return { coordinate_unguarded(_begin), coordinate_unguarded(_end) };
-	}
-
-
-	segment_coordinate _insert(segment_coordinate it) {
-		return __insert(header_from_coordinate(it));
-	}
-	std::pair<segment_coordinate, segment_coordinate> _insert(segment_coordinate it, size_type n) {
-		return __insert(header_from_coordinate(it), n);
-	}
-
-
-	segment_coordinate __erase(std::pair<header_iterator, seg::size_t> left, std::pair<header_iterator, seg::size_t> right) {
-		auto [it, i, _s] = seg::erase_from_segment_range(in, left.first, left.second, right.first, right.second);
-		s = s - _s;
-		return coordinate(std::make_pair(it, i));
-	}
-
-
-	segment_coordinate _erase(segment_coordinate left, segment_coordinate right) {
-		return __erase(header_from_coordinate(left), header_from_coordinate(right));
-	}
-
-
-	segment_coordinate _erase(segment_coordinate left) {
-		return __erase(header_from_coordinate(left), header_from_coordinate(successor(left, 1)));
-	}
-
-	void copy_from(const container& other) {
-		s = other.s;
-		seg::copy(std::begin(other), std::end(other), _insert(std::begin(in), s));
+		segmented_coordinate it = begin();
+		while (n) {
+			it = upper_bound(it, *first);
+			it = insert_unguarded(it, c(*first));
+			++it;
+			++first;
+		}
 	}
 
 public:
-	container(container&& other) : in(std::move(other.in)), s(std::move(other.s)), cmp(std::move(other.cmp)) {}
-	container(const container& other) : in(other.in), s(other.s), cmp(other.cmp) { copy_from(other);  }
-	container(const key_compare cmp = key_compare(), const allocator& alloc = allocator()) : in(alloc), cmp(cmp) {}
-	container(const key_compare cmp, index&& in, size_type s) : in(std::move(in)), s(s), cmp(cmp) {}
-	~container() { clear(); }
+	associative_container_tmp(associative_container_tmp&& other) = default;
+	associative_container_tmp(const associative_container_tmp& other) = default;
+	associative_container_tmp(key_compare&& cmp = key_compare(), allocator&& alloc = allocator()) : vec(std::move(alloc)), cmp(std::move(cmp)) {}
+	associative_container_tmp(const key_compare& cmp, const allocator& alloc) : vec(alloc), cmp(cmp) {}
+	associative_container_tmp(key_compare&& cmp, vector&& vec) : vec(std::move(vec)), cmp(std::move(cmp)) {}
+	associative_container_tmp(const key_compare& cmp, const vector& vec) : vec(vec), cmp(cmp) {}
+	~associative_container_tmp() = default;
 
-	container& operator=(container&& other) {
-		clear();
-		in = std::move(other.in);
-		s = std::move(other.s);
-		cmp = std::move(other.cmp);
-		return *this;
-	}
-	container& operator=(const container& other) {
-		clear();
-		copy_from();
-		return *this;
-	}
+	associative_container_tmp& operator=(associative_container_tmp&& other) = default;
+	associative_container_tmp& operator=(const associative_container_tmp& other) = default;
 
 	friend
-	bool operator==(const container& x, const container& y) {
+	bool operator==(const associative_container_tmp& x, const associative_container_tmp& y) {
 		if (x.size() != y.size()) return false;
 		return seg::equal(std::cbegin(x), std::cend(x), std::cbegin(y), equal_adaptor(cmp));
 	}
 	friend
-	bool operator!=(const container& x, const container& y) {
+	bool operator!=(const associative_container_tmp& x, const associative_container_tmp& y) {
 		return !(x == y);
 	}
 
 	friend
-	bool operator<(const container& x, const container& y) {
-		return seg::compare(std::cbegin(x), std::cend(x), std::cbegin(y), std::cend(y), cmp);
+	bool operator<(const associative_container_tmp& x, const associative_container_tmp& y) {
+		return seg::lexicographical_compare(std::cbegin(x), std::cend(x), std::cbegin(y), std::cend(y), cmp) < 0;
 	}
 	friend
-	bool operator>(const container& x, const container& y) {
+	bool operator>(const associative_container_tmp& x, const associative_container_tmp& y) {
 		return y < x;
 	}
 	friend
-	bool operator<=(const container& x, const container& y) {
+	bool operator<=(const associative_container_tmp& x, const associative_container_tmp& y) {
 		return !(y < x);
 	}
 	friend
-	bool operator>=(const container& x, const container& y) {
+	bool operator>=(const associative_container_tmp& x, const associative_container_tmp& y) {
 		return !(x < y);
 	}
 
-	bool empty() const { return in.empty(); }
+	bool empty() const { return vec.empty(); }
 
-	size_type size() const { return s; }
+	size_type size() const { return vec.size(); }
 
 	key_compare key_comp() const { return cmp.key_comp(); }
 
+	void swap(vector& _vec) {
+	    std::swap(_vec, vec);
+	}
+
 	void swap(index& _in, size_type& _s) {
-	    std::swap(_in, in);
-		std::swap(_s, s);
+		vec.swap(_in, _s);
 	}
 
-	segment_coordinate begin() {
-		segment_iterator first_seg = segment_iterator(std::begin(in));
-		return segment_coordinate(first_seg, std::begin(first_seg));
-	}
-	segment_coordinate end() {
-		segment_iterator last_seg = segment_iterator(std::end(in));
-		return segment_coordinate(last_seg, std::begin(last_seg));
-	}
-	const_segment_coordinate cbegin() {
-		const_segment_iterator first_seg = const_segment_iterator(std::begin(in));
-		return const_segment_coordinate(first_seg, const_flat_iterator(std::begin(first_seg)));
-	}
-	const_segment_coordinate cend() {
-		const_segment_iterator last_seg = const_segment_iterator(std::end(in));
-		return const_segment_coordinate(last_seg, const_flat_iterator(std::begin(last_seg)));
-	}
-	const_segment_coordinate begin() const { return cbegin(); }
-	const_segment_coordinate end() const { return cend(); }
+	segmented_coordinate begin() { return vec.begin(); }
+	segmented_coordinate end() { return vec.end(); }
+
+	const_segmented_coordinate cbegin() { return vec.cbegin(); }
+	const_segmented_coordinate cend() { return vec.cend(); }
+
+	const_segmented_coordinate begin() const { return cbegin(); }
+	const_segmented_coordinate end() const { return cend(); }
 
 	template<typename I>
 	// I models InnputIterator
 	// IteratorValueType<I> == value_type
-	std::pair<segment_coordinate, segment_coordinate> insert_move_range_unguarded(segment_coordinate it, I first, size_type n) {
-		std::pair<segment_coordinate, segment_coordinate> r = _insert(it, static_cast<seg::size_t>(n));
-		seg::move_flat_n_seg_uninitialized(first, n, r.first);
-		return r;
+	std::pair<segmented_coordinate, segmented_coordinate> insert_move_sorted_unguarded(segmented_coordinate it, I first, size_type n) {
+		return vec.insert_move(it, first, n);
 	}
 
 	template<typename I>
 	// I models InnputIterator
 	// IteratorValueType<I> == value_type
-	std::pair<segment_coordinate, segment_coordinate> insert_range_unguarded(segment_coordinate it, I first, size_type n) {
-		std::pair<segment_coordinate, segment_coordinate> r = _insert(it, static_cast<seg::size_t>(n));
-		seg::copy_flat_n_seg_uninitialized(first, n, r.first);
-		return r;
+	std::pair<segmented_coordinate, segmented_coordinate> insert_sorted_unguarded(segmented_coordinate it, I first, size_type n) {
+		return vec.insert(it, first, n);
 	}
 
-	segment_coordinate insert_unguarded(segment_coordinate it, value_type&& v) {
-		it = _insert(it);
-		construct_at(it, std::move(v));
-		return it;
+	template<typename I>
+	// I models InnputIterator
+	// IteratorValueType<I> == value_type
+	void insert_sorted(I first, size_type n) {
+		insert_sorted(first, n, _copy());
 	}
 
-	segment_coordinate insert_unguarded(segment_coordinate it, const value_type& v) {
-		it = _insert(it);
-		construct_at(it, v);
-		return it;
+	template<typename I>
+	// I models InnputIterator
+	// IteratorValueType<I> == value_type
+	void insert_move_sorted(I first, size_type n) {
+		insert_sorted(first, n, _move());
 	}
 
-	segment_coordinate insert(value_type&& v) {
+	segmented_coordinate insert_unguarded(segmented_coordinate it, value_type&& v) {
+		return vec.insert(it, std::move(v));
+	}
+
+	segmented_coordinate insert_unguarded(segmented_coordinate it, const value_type& v) {
+		return vec.insert(it, v);
+	}
+
+	segmented_coordinate insert(value_type&& v) {
 		return insert_unguarded(upper_bound(value_to_key::get(v)), std::move(v));
 	}
 
-	segment_coordinate insert(const value_type& v) {
+	segmented_coordinate insert(const value_type& v) {
 		return insert_unguarded(upper_bound(value_to_key::get(v)), v);
 	}
 
 	template<typename I>
 	// I models InnputIterator
 	// IteratorValueType<I> == value_type
-	std::pair<segment_coordinate, segment_coordinate> insert_move_range_unguarded(const_segment_coordinate it, I first, size_type n) {
-		return insert_move_range(coordinate_from_const(it), first, n);
+	std::pair<segmented_coordinate, segmented_coordinate> insert_move_sorted_unguarded(const_segmented_coordinate it, I first, size_type n) {
+		return vec.insert_move(it, first, n);
 	}
 
 	template<typename I>
 	// I models InnputIterator
 	// IteratorValueType<I> == value_type
-	std::pair<segment_coordinate, segment_coordinate> insert_range_unguarded(const_segment_coordinate it, I first, size_type n) {
-		return insert_range(coordinate_from_const(it), first, n);
+	std::pair<segmented_coordinate, segmented_coordinate> insert_sorted_unguarded(const_segmented_coordinate it, I first, size_type n) {
+		return vec.insert(it, first, n);
 	}
 
-	template<typename... Args>
-	segment_coordinate insert_unguarded(const_segment_coordinate it, Args&&... args) {
-		return insert(coordinate_from_const(it), std::forward<Args>(args)...);
+	segmented_coordinate insert_unguarded(const_segmented_coordinate it, value_type&& v) {
+		return vec.insert(it, std::move(v));
+	}
+	segmented_coordinate insert_unguarded(const_segmented_coordinate it, const value_type& v) {
+		return vec.insert(it, v);
 	}
 
-	segment_coordinate erase(segment_coordinate first, segment_coordinate last) {
-		return _erase(first, last);
+	segmented_coordinate erase(segmented_coordinate first, segmented_coordinate last) {
+		return vec.erase(first, last);
 	}
-	segment_coordinate erase(segment_coordinate it) {
-		return _erase(it);
+	segmented_coordinate erase(segmented_coordinate it) {
+		return vec.erase(it);
 	}
 
 	void clear() {
-		_erase(begin(), end());
+		vec.clear();
 	}
 
-	segment_coordinate erase(const_segment_coordinate first, const_segment_coordinate last) {
-		return erase(coordinate_from_const(first), coordinate_from_const(last));
+	segmented_coordinate erase(const_segmented_coordinate first, const_segmented_coordinate last) {
+		return vec.erase(first, last);
 	}
-	segment_coordinate erase(const_segment_coordinate it) {
-		return _erase(coordinate_from_const(it));
-	}
-
-
-	segment_coordinate lower_bound(const key_type& k) {
-		return seg::lower_bound(begin(), end(), k, cmp);
-	}
-	const_segment_coordinate lower_bound(const key_type& k) const {
-		return seg::lower_bound(cbegin(), cend(), k, cmp);
+	segmented_coordinate erase(const_segmented_coordinate it) {
+		return vec.erase(it);
 	}
 
-	segment_coordinate upper_bound(const key_type& k) {
-		return seg::upper_bound(begin(), end(), k, cmp);
+
+	segmented_coordinate lower_bound(const key_type& k) {
+		return seg::lower_bound(begin(), end(), k, cmp, find_adaptor());
 	}
-	const_segment_coordinate upper_bound(const key_type& k) const {
-		return seg::upper_bound(cbegin(), cend(), k, cmp);
+	const_segmented_coordinate lower_bound(const key_type& k) const {
+		return seg::lower_bound(cbegin(), cend(), k, cmp, find_adaptor());
 	}
 
-	std::pair<segment_coordinate, segment_coordinate> equal_range(const key_type& k) {
-		return seg::equal_range(begin(), end(), k, cmp);
+	segmented_coordinate upper_bound(const key_type& k) {
+		return seg::upper_bound(begin(), end(), k, cmp, find_adaptor());
 	}
-	std::pair<const_segment_coordinate, const_segment_coordinate> equal_range(const key_type& k) const {
-		return seg::equal_range(cbegin(), cend(), k, cmp);
+	const_segmented_coordinate upper_bound(const key_type& k) const {
+		return seg::upper_bound(cbegin(), cend(), k, cmp, find_adaptor());
+	}
+
+	std::pair<segmented_coordinate, segmented_coordinate> equal_range(const key_type& k) {
+		return seg::equal_range(begin(), end(), k, cmp, equal_range_find_adaptor());
+	}
+	std::pair<const_segmented_coordinate, const_segmented_coordinate> equal_range(const key_type& k) const {
+		return seg::equal_range(cbegin(), cend(), k, cmp, equal_range_find_adaptor());
+	}
+
+	segmented_coordinate lower_bound(segmented_coordinate it, const key_type& k) {
+		return seg::lower_bound(it, end(), k, cmp, find_adaptor());
+	}
+	segmented_coordinate lower_bound(const_segmented_coordinate it, const key_type& k) {
+		return seg::lower_bound(vector::coordinate_from_const(it), end(), k, cmp, find_adaptor());
+	}
+	const_segmented_coordinate lower_bound(const_segmented_coordinate it, const key_type& k) const {
+		return seg::lower_bound(it, cend(), k, cmp, find_adaptor());
+	}
+
+	segmented_coordinate upper_bound(segmented_coordinate it, const key_type& k) {
+		return seg::upper_bound(it, end(), k, cmp, find_adaptor());
+	}
+	segmented_coordinate upper_bound(const_segmented_coordinate it, const key_type& k) {
+		return seg::upper_bound(vector::coordinate_from_const(it), end(), k, cmp, find_adaptor());
+	}
+	const_segmented_coordinate upper_bound(const_segmented_coordinate it, const key_type& k) const {
+		return seg::upper_bound(it, cend(), k, cmp, find_adaptor());
+	}
+
+	std::pair<segmented_coordinate, segmented_coordinate> equal_range(segmented_coordinate it, const key_type& k) {
+		return seg::equal_range(it, end(), k, cmp, find_adaptor());
+	}
+	std::pair<segmented_coordinate, segmented_coordinate> equal_range(const_segmented_coordinate it, const key_type& k) {
+		return seg::equal_range(vector::coordinate_from_const(it), end(), k, cmp, find_adaptor());
+	}
+	std::pair<const_segmented_coordinate, const_segmented_coordinate> equal_range(const_segmented_coordinate it, const key_type& k) const {
+		return seg::equal_range(it, cend(), k, cmp, find_adaptor());
 	}
 };
 
@@ -1745,37 +1995,34 @@ struct set_value_to_key
 	static const T& get(const T& x) { return x; }
 };
 
-constexpr segment_size_t default_segment_capacity = 1024u;
-
-template<typename T>
-constexpr segment_size_t default_capacity_for_type() {
-	constexpr size = sizeof(T);
-	constexpr capacity = default_segment_capacity / size;
-	return capacity > 2 ? c : 2;
-}
-
 template<
 	typename K,
 	typename M,
 	typename Cmp,
-	typename I>
-using multimap_tmp = container<K, M, Cmp, I, map_compare_adaptor<Cmp>, map_value_to_key>;
+	typename Vec,
+	typename FAdaptor,
+	typename EqualRangeFAdaptor>
+using multimap_tmp = associative_container_tmp<K, M, Cmp, Vec, map_compare_adaptor<Cmp>, map_value_to_key, FAdaptor, EqualRangeFAdaptor>;
 
 template<
 	typename K,
 	typename M,
 	typename Cmp,
 	segment_size_t C,
-	typename A>
-using multimap_big_header = multimap_tmp<K, M, Cmp, big_header_index<std::pair<K, M>, C, A>>;
+	typename A,
+	typename FAdaptor,
+	typename EqualRangeFAdaptor>
+using multimap_big_header = multimap_tmp<K, M, Cmp, vector_big_header<std::pair<K, M>, C, A>, FAdaptor, EqualRangeFAdaptor>;
 
 template<
 	typename K,
 	typename M,
 	typename Cmp,
 	segment_size_t C,
-	typename A>
-using multimap_small_header = multimap_tmp<K, M, Cmp, small_header_index<std::pair<K, M>, C, A>>;
+	typename A,
+	typename FAdaptor,
+	typename EqualRangeFAdaptor>
+using multimap_small_header = multimap_tmp<K, M, Cmp, vector_small_header<std::pair<K, M>, C, A>, FAdaptor, EqualRangeFAdaptor>;
 
 template<
 	typename K,
@@ -1783,36 +2030,43 @@ template<
 	typename Cmp = std::less<K>,
 	segment_size_t C = default_capacity_for_type<std::pair<K, M>>(),
 	typename A = std::allocator<std::pair<K, M>>>
-using multimap = multimap_big_header<K, M, Cmp, C, A>;
+using multimap = multimap_big_header<K, M, Cmp, C, A, flat::find_adaptor_linear, flat::equal_range_adaptor_linear>;
 
 template<
 	typename K,
 	typename Cmp,
-	typename I>
-using multiset_tmp = container<K, K, Cmp, I, set_compare_adaptor<Cmp>, set_value_to_key>;
-
-template<
-	typename K,
-	typename Cmp,
-	segment_size_t C,
-	typename A>
-using multiset_big_header = multiset_tmp<K, Cmp, big_header_index<K, C, A>>;
+	typename Vec,
+	typename FAdaptor,
+	typename EqualRangeFAdaptor>
+using multiset_tmp = associative_container_tmp<K, K, Cmp, Vec, set_compare_adaptor<Cmp>, set_value_to_key, FAdaptor, EqualRangeFAdaptor>;
 
 template<
 	typename K,
 	typename Cmp,
 	segment_size_t C,
-	typename A>
-using multiset_small_header = multiset_tmp<K, Cmp, small_header_index<K, C, A>>;
+	typename A,
+	typename FAdaptor,
+	typename EqualRangeFAdaptor>
+using multiset_big_header = multiset_tmp<K, Cmp, vector_big_header<K, C, A>, FAdaptor, EqualRangeFAdaptor>;
+
+template<
+	typename K,
+	typename Cmp,
+	segment_size_t C,
+	typename A,
+	typename FAdaptor,
+	typename EqualRangeFAdaptor>
+using multiset_small_header = multiset_tmp<K, Cmp, vector_small_header<K, C, A>, FAdaptor, EqualRangeFAdaptor>;
 
 template<
 	typename K,
 	typename Cmp = std::less<K>,
 	segment_size_t C = default_capacity_for_type<K>(),
 	typename A = std::allocator<K>>
-using multiset = multiset_big_header<K, Cmp, C, A>;
+using multiset = multiset_big_header<K, Cmp, C, A, flat::find_adaptor_linear, flat::equal_range_adaptor_linear>;
 
 } // namespace seg
 
 
 
+} // namespace str2d

@@ -7,6 +7,9 @@
 #include <cstdlib>
 #include <vector>
 
+namespace str2d
+{ 
+
 template<typename C>
 // C models Container
 using SizeType = typename C::size_type;
@@ -22,6 +25,10 @@ using AllocatorType = typename C::allocator;
 template<typename H>
 // H models SegmentHeader
 using AreaType = typename H::area_type;
+
+template<typename C>
+// C models Segmented Container
+using Index = typename C::index;
 
 template<typename I>
 // I models Iterator
@@ -60,21 +67,26 @@ template<typename C>
 using ConstReverseIterator = typename C::const_reverse_iterator;
 
 template<typename I>
-// I models SegmentIterator or SegmentCoordinate
 using FlatIterator = typename I::flat_iterator;
 
 template<typename I>
-// I models SegmentIterator or SegmentCoordinate
 using ConstFlatIterator = typename I::const_flat_iterator;
 
 template<typename C>
-// C models SegmentCoordinate
 using SegmentIterator = typename C::segment_iterator;
 
 template<typename C>
-// C models SegmentCoordinate
 using ConstSegmentIterator = typename C::const_segment_iterator;
 
+template<typename C>
+using SegmentedCoordinate = typename C::segmented_coordinate;
+
+template<typename C>
+using ConstSegmentedCoordinate = typename C::const_segmented_coordinate;
+
+template<typename A, typename O>
+// A models Allocator
+using AllocatorRebindType = typename std::allocator_traits<A>::template rebind_alloc<O>;
 
 template<typename I0, typename I1>
 using TriviallyCopyableMemory = std::integral_constant<bool,
@@ -182,3 +194,6 @@ struct upper_bound_predicate
 		return !cmp(*x, y);
 	}
 };
+
+
+} // namespace str2d

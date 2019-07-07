@@ -130,6 +130,7 @@
     <ClInclude Include="seg_algorithm.h" />
     <ClInclude Include="seg_container.h" />
     <ClInclude Include="seg_container_base.h" />
+    <ClInclude Include="str2d.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

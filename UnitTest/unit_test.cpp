@@ -19,6 +19,9 @@
 #include "..\Segmented-Map\seg_container.h"
 
 
+namespace str2d
+{ 
+
 namespace seg
 {
 
@@ -36,116 +39,7 @@ int value_of(value_type v) {
 
 #else
 
-struct instrumented_base
-{
-	enum operations {
-		conversion,
-		default_constructor,
-		copy_constructor,
-		move_constructor,
-		constructor,
-		assignment,
-		destructor,
-		equality, 
-		comparison,
-		exist,
-		number_ops
-	};
-	static size_t counts[number_ops];
-	static size_t snapshot[number_ops];
-	static const char* counter_names[number_ops];
-	static void init() {
-		std::fill(std::begin(counts), std::end(counts), 0);
-		std::fill(std::begin(snapshot), std::end(snapshot), 0);
-	}
-	static void save_snapshot() {
-		std::copy(std::begin(counts), std::end(counts), std::begin(snapshot));
-	}
-};
-
-template <typename T>
-// T is Semiregualr or Regular or TotallyOrdered
-struct instrumented : instrumented_base
-{
-	typedef T value_type;
-	T value;
-
-	// Conversion:
-	explicit instrumented(const value_type& v) : value(v) {
-		++counts[constructor];
-		++counts[conversion]; 
-		++counts[exist];
-	}
-
-	// Semiregular:
-	instrumented() {
-		++counts[constructor];
-		++counts[default_constructor];
-		++counts[exist];
-	}
-	instrumented(const instrumented& x) : value(x.value) {
-		++counts[constructor];
-		++counts[copy_constructor];
-		++counts[exist];
-	}
-	instrumented(instrumented&& x) noexcept : value(std::move(x.value)) {
-		++counts[constructor];
-		++counts[move_constructor];
-		++counts[exist];
-	}
-	~instrumented() { 
-		++counts[destructor];
-		--counts[exist];
-	}
-	instrumented& operator=(const instrumented& x) {
-		++counts[assignment];
-		value = x.value;
-		return *this;
-	}
-	// Regular
-	friend
-	bool operator==(const instrumented& x, const instrumented& y) {
-		++counts[equality];
-		return x.value == y.value;
-	}
-	friend
-	bool operator!=(const instrumented& x, const instrumented& y) {
-		return !(x == y);
-	}
-	// TotallyOrdered
-	friend
-	bool operator<(const instrumented & x, const instrumented & y) {
-		++counts[comparison];
-		return x.value < y.value;
-	}
-	friend
-	bool operator>(const instrumented & x, const instrumented & y) {
-		return y < x;
-	}
-	friend
-	bool operator<=(const instrumented & x, const instrumented & y) {
-		return !(y < x);
-	}
-	friend
-	bool operator>=(const instrumented & x, const instrumented & y) {
-		return !(x < y);
-	}
-};
-
-size_t instrumented_base::counts[number_ops];
-size_t instrumented_base::snapshot[number_ops];
-const char* instrumented_base::counter_names[number_ops] = {
-	"conversion",
-	"default_constructor",
-	"copy_constructor",
-	"move_constructor",
-	"constructor"
-	"assignment",
-	"destructor",
-	"equality",
-	"comparison",
-	"exist"
-};
+#include "instrumented.h"
 
 using value_type = instrumented<int>;
 
@@ -188,23 +82,36 @@ const char* allocator_base::counter_names[number_ops] = {
 	"deallocation",
 };
 
-#ifdef CHUNKED_ALLOCATOR_TEST
+#ifdef POOL_ALLOCATOR_TEST
 
 #include "..\Segmented-Map\pool_allocator.h"
 
+static constexpr std::size_t chunk_capacity = 100;
+
 struct allocator : allocator_base
 {
-	pool_allocator alloc;
+	using alloc_type = str2d::pool_allocator<area, chunk_capacity>;
+	using value_type = typename alloc_type::value_type;
+	using size_type = typename alloc_type::size_type;
+	using difference_type = typename alloc_type::difference_type;
+	using is_always_equal = typename alloc_type::is_always_equal;
 
-	allocator() : alloc(sizeof(area), 20, false) {}
+	alloc_type alloc;
 
-	area* allocate(size_t n) {
+	allocator(std::size_t reserve_chunks = 0) : alloc(reserve_chunks) {}
+
+	template<typename O>
+	struct rebind {
+		using other = allocator;
+	};
+
+	value_type* allocate(size_t n) {
 		++counts[allocation];
-		return static_cast<area*>(alloc.allocate());
+		return alloc.allocate(n);
 	}
-	void deallocate(area* a, size_t n) {
+	void deallocate(value_type* a, size_t n) {
 		++counts[deallocation];
-		return alloc.deallocate(static_cast<void*>(a));
+		return alloc.deallocate(a, n);
 	}
 };
 
@@ -227,17 +134,19 @@ struct allocator : allocator_base
 #endif
 
 #ifdef BIG_HEADER
-using index = seg::big_header_index<value_type, capacity, allocator>;
+using vector = seg::vector_big_header<value_type, capacity, allocator>;
 #else
-using index = seg::small_header_index<value_type, capacity, allocator>;
+using vector = seg::vector_small_header<value_type, capacity, allocator>;
 #endif
+
+using index = typename vector::index;
 using header_iterator = Iterator<index>;
 using const_header_iterator = ConstIterator<index>;
-using multiset = seg::multiset_tmp<value_type, std::less<value_type>, index>;
-using const_segment_coordinate = typename multiset::const_segment_coordinate;
-using segment_coordinate = typename multiset::segment_coordinate;
-using segment_iterator = typename segment_coordinate::segment_iterator;
-using const_segment_iterator = typename segment_coordinate::const_segment_iterator;
+using multiset = seg::multiset_tmp<value_type, std::less<value_type>, vector, flat::find_adaptor_linear, flat::equal_range_adaptor_linear>;
+using const_segmented_coordinate = typename multiset::const_segmented_coordinate;
+using segmented_coordinate = typename multiset::segmented_coordinate;
+using segment_iterator = typename segmented_coordinate::segment_iterator;
+using const_segment_iterator = typename segmented_coordinate::const_segment_iterator;
 using flat_iterator = typename segment_iterator::flat_iterator;
 using iterator = typename std::vector<value_type>::iterator;
 using const_iterator = typename std::vector<value_type>::const_iterator;
@@ -1120,8 +1029,8 @@ struct TestSegmentRangeBase : public InternalTestBase
 {
 	static std::vector<value_type> v;
 	static index in;
-	static segment_coordinate first_inserted;
-	static segment_coordinate last_inserted;
+	static segmented_coordinate first_inserted;
+	static segmented_coordinate last_inserted;
 
 	void SetUpSeg() override {
 		first_inserted = begin();
@@ -1135,8 +1044,8 @@ struct TestSegmentRangeBase : public InternalTestBase
 		v.clear();
 	}
 
-	segment_coordinate begin() { return segment_coordinate(in.begin(), seg::begin(*in.begin())); }
-	segment_coordinate end() { return segment_coordinate(in.end(), seg::begin(*in.end())); }
+	segmented_coordinate begin() { return segmented_coordinate(in.begin(), seg::begin(*in.begin())); }
+	segmented_coordinate end() { return segmented_coordinate(in.end(), seg::begin(*in.end())); }
 	header_iterator left() { return in.begin(); }
 	header_iterator right() { return --in.end(); }
 
@@ -1171,8 +1080,8 @@ struct TestSegmentRangeBase : public InternalTestBase
 
 index TestSegmentRangeBase::in;
 std::vector<value_type> TestSegmentRangeBase::v;
-segment_coordinate TestSegmentRangeBase::first_inserted;
-segment_coordinate TestSegmentRangeBase::last_inserted;
+segmented_coordinate TestSegmentRangeBase::first_inserted;
+segmented_coordinate TestSegmentRangeBase::last_inserted;
 
 #endif 
 
@@ -1184,8 +1093,8 @@ segment_coordinate TestSegmentRangeBase::last_inserted;
 struct TestSegmentInsert : public TestSegmentRangeBase
 {
 	void TestRangeInsertedCorrectly(
-		segment_coordinate first,
-		segment_coordinate last,
+		segmented_coordinate first,
+		segmented_coordinate last,
 		size_t insert_nm,
 		header_iterator first_balance,
 		header_iterator last_balance) {
@@ -1225,9 +1134,9 @@ struct TestSegmentInsert : public TestSegmentRangeBase
 		header_iterator last_balance) {
 
 		segment_iterator first_seg = segment_iterator(r.first.first);
-		segment_coordinate first(first_seg, std::begin(first_seg) + r.first.second);
+		segmented_coordinate first(first_seg, std::begin(first_seg) + r.first.second);
 		segment_iterator last_seg = segment_iterator(r.second.first);
-		segment_coordinate last(last_seg, std::begin(last_seg) + r.second.second);
+		segmented_coordinate last(last_seg, std::begin(last_seg) + r.second.second);
 
 		TestRangeInsertedCorrectly(first, last, insert_nm, first_balance, last_balance);
 	}
@@ -1306,7 +1215,7 @@ TEST_F(TestSegmentInsert, InsertBalanceLeftIncreaseEmpty)
 
 	TestRangeInsertedCorrectly(
 		begin(), 
-		segment_coordinate(it, std::begin(it) + p.second), 
+		segmented_coordinate(it, std::begin(it) + p.second), 
 		insert_nm,
 		left(), 
 		right());
@@ -1419,7 +1328,7 @@ TEST_F(TestSegmentInsert, Insert)
 
 struct TestSegmentErase : public TestSegmentRangeBase
 {
-	void TestRangeErasedCorrectly(segment_coordinate erase_pos, size_t left_size, size_t right_size)
+	void TestRangeErasedCorrectly(segmented_coordinate erase_pos, size_t left_size, size_t right_size)
 	{
 		first_inserted = begin();
 		last_inserted = first_inserted;
@@ -1444,7 +1353,7 @@ struct TestSegmentErase : public TestSegmentRangeBase
 		size_t right_size)
 	{
 		segment_iterator it(erase_pos.first);
-		return TestRangeErasedCorrectly(segment_coordinate(it, flat::successor(std::begin(it), erase_pos.second)), left_size, right_size);
+		return TestRangeErasedCorrectly(segmented_coordinate(it, flat::successor(std::begin(it), erase_pos.second)), left_size, right_size);
 	}
 };
 
@@ -1465,8 +1374,8 @@ TEST_F(TestSegmentErase, Erase)
 	size_t size = InitRandRange(rand(10));
 	auto [firste, laste] = rand_begin_and_end(size);
 	size_t erase_nm = laste - firste;
-	segment_coordinate first_erase = seg::successor(begin(), firste);
-	segment_coordinate last_erase = seg::successor(first_erase, erase_nm);
+	segmented_coordinate first_erase = seg::successor(begin(), firste);
+	segmented_coordinate last_erase = seg::successor(first_erase, erase_nm);
 
 	header_iterator _first_erase = seg::segment(first_erase).h;
 	size_t _first_i = seg::flat(first_erase) - seg::begin(*_first_erase);
@@ -1516,9 +1425,9 @@ TEST_F(TestSegmentContainerSearch, LowerBound)
 {
 	InitRand(rand(10));
 	int size = static_cast<int>(set.size());
-	segment_coordinate end = set.end();
+	segmented_coordinate end = set.end();
 	for (int i = 0; i < size; ++i) {
-		segment_coordinate c = set.lower_bound(value_type(i));
+		segmented_coordinate c = set.lower_bound(value_type(i));
 		ASSERT_NE(c, end) << 
 			"LowerBound was not found";
 		ASSERT_GE(*c, value_type(i)) <<
@@ -1532,9 +1441,9 @@ TEST_F(TestSegmentContainerSearch, UpperBound)
 {
 	InitRand(10);
 	int size = static_cast<int>(set.size());
-	segment_coordinate end = set.end();
+	segmented_coordinate end = set.end();
 	for (int i = 0; i < size; ++i) {
-		segment_coordinate c = set.upper_bound(value_type(i));
+		segmented_coordinate c = set.upper_bound(value_type(i));
 		if (i != size - 1) {
 			ASSERT_NE(c, end) <<
 				"UpperBound was not found";
@@ -1554,7 +1463,7 @@ TEST_F(TestSegmentContainerSearch, EqualRange)
 {
 	InitRand(10);
 	int size = static_cast<int>(set.size());
-	segment_coordinate end = set.end();
+	segmented_coordinate end = set.end();
 	for (int i = 0; i < size; ++i) {
 		auto [lb, ub] = set.equal_range(value_type(i));
 		ASSERT_NE(lb, end) <<
@@ -1592,14 +1501,14 @@ struct equal_to
 
 void check_equal_range(
 	value_type x,
-	const_segment_coordinate seg_first, 
-	const_segment_coordinate seg_lb,
-	const_segment_coordinate seg_up,
+	const_segmented_coordinate seg_first, 
+	const_segmented_coordinate seg_lb,
+	const_segmented_coordinate seg_up,
 	const_iterator first, 
 	const_iterator lb,
 	const_iterator ub)
 {
-	const_segment_coordinate _seg_lb = seg::find_if_not(seg_lb, seg_up, equal_to(x));
+	const_segmented_coordinate _seg_lb = seg::find_if_not(seg_lb, seg_up, equal_to(x));
 	ASSERT_EQ(_seg_lb, seg_up) <<
 		"Not all elements in the range [lower bound, upper bound) are equivalent";
 
@@ -1682,13 +1591,13 @@ struct TestSegmentContainerUsage : public InternalTestBase
 		size_t size = rand(min_size, max_size);
 		v.resize(size);
 		non_decreasing_range(v.begin(), v.end(), min_value, max_value);
-		set.insert_range_unguarded(set.begin(), v.begin(), v.size());
+		set.insert_sorted_unguarded(set.begin(), v.begin(), v.size());
 	}
 
 	void EraseRand() {
 		size_t erase_nm = rand(set.size());
 		size_t erase_index = rand(0, set.size() - erase_nm);
-		segment_coordinate first = seg::successor(set.begin(), erase_index);
+		segmented_coordinate first = seg::successor(set.begin(), erase_index);
 		set.erase(first, seg::successor(first, erase_nm));
 		v.erase(flat::successor(v.begin(), erase_index), flat::successor(v.begin(), erase_index + erase_nm));
 	}
@@ -1708,7 +1617,7 @@ struct TestSegmentContainerUsage : public InternalTestBase
 			int min = it == v.begin() ? 0 : value_of(*(it - 1));
 			it = v.insert(it, insert_nm, value_type(0));
 			non_decreasing_range(it, flat::successor(it, insert_nm), min, max);
-			set.insert_range_unguarded(seg::successor(set.begin(), it - v.begin()), it, insert_nm);
+			set.insert_sorted_unguarded(seg::successor(set.begin(), it - v.begin()), it, insert_nm);
 		}
 		else {
 			InitRand(1000, 2000, 0, static_cast<int>(rand(0, max_value)));
@@ -1742,6 +1651,8 @@ TEST_F(TestSegmentContainerUsage, Usage)
 } // namespace test
 
 } // namespace seg
+
+} // namespace str2d
 
 int main(int argc, char** argv) {
 	::testing::InitGoogleTest(&argc, argv);

@@ -5,10 +5,14 @@
 #define GTEST_LANG_CXX11 1 // Must be defined, otherwise Gtest complains
 
 #define BIG_HEADER
-#define CHUNKED_ALLOCATOR_TEST
-//#define SEG_POD_TEST
+#define POOL_ALLOCATOR_TEST
+#define SEG_POD_TEST
 #define EXTERNAL_TEST
 #define INTERNAL_TEST
+
+
+
+
 
 #ifdef EXTERNAL_TEST
 

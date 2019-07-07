@@ -9,13 +9,19 @@
     <ClInclude Include="compile_options.h">
       <Filter>Source</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="seg_unit_test.cpp">
+    <ClInclude Include="instrumented.h">
       <Filter>Source</Filter>
-    </ClCompile>
+    </ClInclude>
+    <ClInclude Include="rand.h">
+      <Filter>Source</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="unit_test.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

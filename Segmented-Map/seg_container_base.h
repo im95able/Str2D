@@ -7,6 +7,9 @@
 #include "utility.h"
 #include "seg_algorithm.h"
 
+namespace str2d
+{ 
+
 namespace seg
 { 
 
@@ -189,7 +192,7 @@ size_t size(const H& h) { return end_index(h) - begin_index(h); }
 template<typename H>
 // H models SegmentHeader or SegmentMeta
 inline
-constexpr size_t capacity(const H& h) { return static_cast<size_t>(H::capacity); }
+constexpr size_t capacity(const H&) { return static_cast<size_t>(H::capacity); }
 
 template<typename H>
 // H models SegmentHeader
@@ -261,7 +264,7 @@ constexpr size_t limit(const H& h) { return limit(capacity(h)); }
 
 template<typename I>
 // I models SegmentIndex
-inline size_t segment_capacity(const I& index) {
+inline size_t segment_capacity(const I&) {
 	return static_cast<size_t>(I::segment_capacity);
 }
 
@@ -474,7 +477,7 @@ struct const_segment_iterator
 // SEGMENT COORDIANTE
 //************************************************************************
 template<typename SegmentIt, typename ConstSegmentIt>
-struct segment_coordinate
+struct segmented_coordinate
 {
 	using segment_iterator = SegmentIt;
 	using const_segment_iterator = ConstSegmentIt;
@@ -490,43 +493,43 @@ struct segment_coordinate
 	segment_iterator _seg;
 	flat_iterator _flat;
 
-	segment_coordinate() = default;
-	segment_coordinate(const segment_coordinate&) = default;
-	segment_coordinate(segment_iterator s, flat_iterator f) : _seg(s), _flat(f) {}
-	explicit segment_coordinate(const std::pair<segment_iterator, flat_iterator>& p) : _seg(p.first), _flat(p.second) {}
+	segmented_coordinate() = default;
+	segmented_coordinate(const segmented_coordinate&) = default;
+	segmented_coordinate(segment_iterator s, flat_iterator f) : _seg(s), _flat(f) {}
+	explicit segmented_coordinate(const std::pair<segment_iterator, flat_iterator>& p) : _seg(p.first), _flat(p.second) {}
 
 	friend
-	bool operator==(const segment_coordinate& x, const segment_coordinate& y) {
+	bool operator==(const segmented_coordinate& x, const segmented_coordinate& y) {
 		return x._seg == y._seg && x._flat == y._flat;
 	}
 	friend
-	bool operator!=(const segment_coordinate& x, const segment_coordinate& y) {
+	bool operator!=(const segmented_coordinate& x, const segmented_coordinate& y) {
 		return !(x == y);
 	}
 
 	friend
-	bool operator<(const segment_coordinate& x, const segment_coordinate& y) {
+	bool operator<(const segmented_coordinate& x, const segmented_coordinate& y) {
 		if (x._seg < y._seg) return true;
 		if (y._seg < x._seg) return false;
 		return x._flat < y._flat;
 	}
 	friend
-	bool operator>=(const segment_coordinate& x, const segment_coordinate& y) {
+	bool operator>=(const segmented_coordinate& x, const segmented_coordinate& y) {
 		return !(x < y);
 	}
 	friend
-	bool operator>(const segment_coordinate& x, const segment_coordinate& y) {
+	bool operator>(const segmented_coordinate& x, const segmented_coordinate& y) {
 		return y < x;
 	}
 	friend
-	bool operator<=(const segment_coordinate& x, const segment_coordinate& y) {
+	bool operator<=(const segmented_coordinate& x, const segmented_coordinate& y) {
 		return !(y < x);
 	}
 
 	reference operator*() const { return reference(*_flat); }
 	pointer operator->() const { return pointer(&**this); }
 
-	segment_coordinate& operator++() {
+	segmented_coordinate& operator++() {
 		flat_iterator __flat = std::end(_seg);
 		--__flat;
 		if (_flat == __flat) {
@@ -538,12 +541,12 @@ struct segment_coordinate
 		}
 		return *this;
 	}
-	segment_coordinate operator++(int) {
-		segment_coordinate tmp = *this;
+	segmented_coordinate operator++(int) {
+		segmented_coordinate tmp = *this;
 		++*this;
 		return tmp;
 	}
-	segment_coordinate& operator--() {
+	segmented_coordinate& operator--() {
 		if (_flat == std::begin(_seg)) {
 			--_seg;
 			_flat = std::end(_seg);
@@ -554,8 +557,8 @@ struct segment_coordinate
 		}
 		return *this;
 	}
-	segment_coordinate operator--(int) {
-		segment_coordinate tmp = *this;
+	segmented_coordinate operator--(int) {
+		segmented_coordinate tmp = *this;
 		--*this;
 		return tmp;
 	}
@@ -570,11 +573,11 @@ struct segment_coordinate
 
 
 template<typename SegmentIt, typename ConstSegmentIt>
-struct const_segment_coordinate
+struct const_segmented_coordinate
 {
 	using _segment_iterator = SegmentIt;
 	using _flat_iterator = FlatIterator<_segment_iterator>;
-	using _segment_coordinate = segment_coordinate<SegmentIt, ConstSegmentIt>;
+	using _segmented_coordinate = segmented_coordinate<SegmentIt, ConstSegmentIt>;
 	using segment_iterator = ConstSegmentIt;
 	using const_segment_iterator = ConstSegmentIt;
 	using flat_iterator = FlatIterator<segment_iterator>;
@@ -589,46 +592,46 @@ struct const_segment_coordinate
 	segment_iterator _seg;
 	flat_iterator _flat;
 
-	const_segment_coordinate() = default;
-	const_segment_coordinate(const const_segment_coordinate&) = default;
-	const_segment_coordinate(const _segment_coordinate& it) : _seg(const_segment_iterator(it._seg)), _flat(const_flat_iterator(it._flat)) {}
-	const_segment_coordinate(const_segment_iterator s, const_flat_iterator f) : _seg(s), _flat(f) {}
-	const_segment_coordinate(_segment_iterator s, _flat_iterator f) : _seg(const_segment_iterator(s)), _flat(const_flat_iterator(f)) {}
-	explicit const_segment_coordinate(const std::pair<const_segment_iterator, const_flat_iterator>& p) : _seg(p.first), _flat(p.second) {}
-	explicit const_segment_coordinate(const std::pair<_segment_iterator, _flat_iterator>& p) : _seg(const_segment_iterator(p.first)), _flat(const_flat_iterator(p.second)) {}
+	const_segmented_coordinate() = default;
+	const_segmented_coordinate(const const_segmented_coordinate&) = default;
+	const_segmented_coordinate(const _segmented_coordinate& it) : _seg(const_segment_iterator(it._seg)), _flat(const_flat_iterator(it._flat)) {}
+	const_segmented_coordinate(const_segment_iterator s, const_flat_iterator f) : _seg(s), _flat(f) {}
+	const_segmented_coordinate(_segment_iterator s, _flat_iterator f) : _seg(const_segment_iterator(s)), _flat(const_flat_iterator(f)) {}
+	explicit const_segmented_coordinate(const std::pair<const_segment_iterator, const_flat_iterator>& p) : _seg(p.first), _flat(p.second) {}
+	explicit const_segmented_coordinate(const std::pair<_segment_iterator, _flat_iterator>& p) : _seg(const_segment_iterator(p.first)), _flat(const_flat_iterator(p.second)) {}
 
 	friend
-	bool operator==(const const_segment_coordinate& x, const const_segment_coordinate& y) {
+	bool operator==(const const_segmented_coordinate& x, const const_segmented_coordinate& y) {
 		return x._seg == y._seg && x._flat == y._flat;
 	}
 	friend
-	bool operator!=(const const_segment_coordinate& x, const const_segment_coordinate& y) {
+	bool operator!=(const const_segmented_coordinate& x, const const_segmented_coordinate& y) {
 		return !(x == y);
 	}
 
 	friend
-	bool operator<(const const_segment_coordinate& x, const const_segment_coordinate& y) {
+	bool operator<(const const_segmented_coordinate& x, const const_segmented_coordinate& y) {
 		if (x._seg < y._seg) return true;
 		if (y._seg < x._seg) return false;
 		return x._flat < y._flat;
 	}
 	friend
-	bool operator>=(const const_segment_coordinate& x, const const_segment_coordinate& y) {
+	bool operator>=(const const_segmented_coordinate& x, const const_segmented_coordinate& y) {
 		return !(x < y);
 	}
 	friend
-	bool operator>(const const_segment_coordinate& x, const const_segment_coordinate& y) {
+	bool operator>(const const_segmented_coordinate& x, const const_segmented_coordinate& y) {
 		return y < x;
 	}
 	friend
-	bool operator<=(const const_segment_coordinate& x, const const_segment_coordinate& y) {
+	bool operator<=(const const_segmented_coordinate& x, const const_segmented_coordinate& y) {
 		return !(y < x);
 	}
 
 	reference operator*() const { return reference(*_flat); }
 	pointer operator->() const { return pointer(&**this); }
 
-	const_segment_coordinate& operator++() {
+	const_segmented_coordinate& operator++() {
 		if (_flat == --std::end(_seg)) {
 			++_seg;
 			_flat = std::begin(_seg); // Reason why must "last" segment must be after the segment which holds the last element
@@ -638,12 +641,12 @@ struct const_segment_coordinate
 		}
 		return *this;
 	}
-	const_segment_coordinate operator++(int) {
-		const_segment_coordinate tmp = *this;
+	const_segmented_coordinate operator++(int) {
+		const_segmented_coordinate tmp = *this;
 		++* this;
 		return tmp;
 	}
-	const_segment_coordinate& operator--() {
+	const_segmented_coordinate& operator--() {
 		if (_flat == std::begin(_seg)) {
 			_flat = --std::end(--_seg);
 		}
@@ -652,8 +655,8 @@ struct const_segment_coordinate
 		}
 		return *this;
 	}
-	const_segment_coordinate operator--(int) {
-		const_segment_coordinate tmp = *this;
+	const_segmented_coordinate operator--(int) {
+		const_segmented_coordinate tmp = *this;
 		--* this;
 		return tmp;
 	}
@@ -670,3 +673,7 @@ struct const_segment_coordinate
 //************************************************************************
 
 } // namespace seg
+
+
+
+} // namespace str2d
