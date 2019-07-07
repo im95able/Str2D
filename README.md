@@ -10,12 +10,12 @@ There are currently only `str2d::seg::multiset` and `str2d::seg::multimap` data 
 The reason for exlusion of `str2d::seg::set` and `str2d::seg::map` is the lack of time; they will probably be included some time later.
 
 # Implementation
-Segmented vector is not a difficult structure to imagine. In it, an `std::vector` is used as an index which holds pointers to segments of memory, which are used to hold data. The capacity of every segment is constant; the size on the other hand can vary.
+Segmented vector is not a difficult structure to imagine. In it, an `std::vector` is used as an index which holds segment headers, structures holding pointers to segments of memory and/or some meta data. Those segments are where the data is actually held. The capacity of every segment is constant; the size on the other hand can vary.
 Each segment holds at least half the capacity("limit") elements on it, except the first one; it can hold as many(less than capacity) or as little(more than 0) as it needs.
 
 ## Insertion
 If an element is inserted into a segment which isn't at full capacity all actions are confined to that segment(which makes the structure vary cache friendly), otherwise an allocation of new segments have to occur and/or some rebalancing to neighbouring segments.
-In the case than new allocations happen, new segment headers(structure holding pointers to segments and maybe some meta data) have to be inserted into the index. Once the index becomes large enough, the operation of inserting into the index starts to impede performance. 
+In the case than new allocations happen, new segment headers have to be inserted into the index. Once the index becomes large enough, the operation of inserting into the index starts to impede performance. 
 
 If an element is inserted into a segment which is at full capacity or an element is erased from a segment with exactly "limit" elements, either some rebalancing to neighbouring segments or an allocation of new segments have to occur.
 
