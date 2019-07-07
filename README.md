@@ -9,7 +9,7 @@ At the heart of the library lies a data structure called `str2d::seg::vector`, t
 There are currently only `str2d::seg::multiset` and `str2d::seg::multimap` data structures in this library apart from the `str2d::seg::vector`. 
 The reason for exlusion of `str2d::seg::set` and `str2d::seg::map` is the lack of time; they will probably be included some time later.
 
-# Implementation
+# Implementation and Usage
 Segmented vector is not a difficult structure to imagine. In it, an `std::vector` is used as an index which holds segment headers, structures holding pointers to segments of memory and possibly some meta data(detailed explaination of segment headers will be given bellow). Those segments are where the data is actually held. The capacity of every segment is constant; the size on the other hand can vary.
 Each segment holds at least half the capacity("limit") elements on it, except the first one; it can hold as many(less than capacity) or as little(more than 0) as it needs.
 
@@ -38,11 +38,11 @@ a deallocation of the segment and/or rebalancing to neighbouring segments have t
 If the data isn't sorted, linear lookup is the best you can get. If it is, as it is for `str2d::seg::multiset` and `str2d::seg::multimap` binary search(`lower_bound`, `upper_bound`, `equal_range`) can be used. Considering the segmented coordinate is a bidirectional iterator, regular binary search wouldn't be a massive improvement over the linear search. Binary search algorithms inside the library are aware of the coordinate structures presented above and can use them to an advantage. Firstly, a binary search over a range of segments is used to locate the segment on which our element resides. After that segment had been located, another binary search
 (regular one) is used to locate the flat iterator of that segment which points to the element we were looking for.
 
-# Usage
+# Exception Safety
 
 # Conclusion
-In a sense, the segmented vector extends the application area of the "flat" vector. As benchmarks show, that extension has limits which have to be taken into account. 
+In a sense, the segmented vector extends the application area of "flat" vector so it can be used as a set container for a large number of elements. As benchmarks show, that extension has limits which have to be taken into account. 
 
-Google's btree is probably a safe bet as a drop in replacement for the std map and set data structures. If on the other hand iterations dominate over other operations, or you constantly need to erase and insert entire ranges, you could consider using the segmented data structures. 
+Google's btree is probably a safe bet as a drop in replacement for the std map and set data structures. If on the other hand iterations dominate other operations, or you're constantly erasing and inserting entire ranges, you could consider using the segmented vector.
 
 Needless to say, these opinions mean little in comparison to actual benchmarks of your code.
