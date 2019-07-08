@@ -12,7 +12,7 @@ Note : There are currently only `str2d::seg::multiset` and `str2d::seg::multimap
 Segmented vector is not a difficult structure to imagine. 
 
 In it, an `std::vector` is used as an index which holds segment headers, structures holding pointers to segments of memory and possibly some meta data(detailed explaination of segment headers will be given bellow). Those segments are where the data is actually held. The capacity of every segment is constant; the size on the other hand can vary.
-Each segment holds at least half the capacity("limit") elements on it, except the first one; it can hold as many(less than capacity) or as little(more than 0) as it needs.
+Each segment holds at least half the capacity(`limit`) elements on it, except the first one; it can hold as many(less than capacity) or as little(more than 0) as it needs.
 
 ### Coordinate Structures/Iterators
 Segmented vector utilizes 3 kinds of coordinate structures : 
@@ -29,6 +29,8 @@ The algorithms in the library are aware of these coordinate structures, and use 
 
 Typedefs used in the examples bellow :
 ```cpp
+include "str2d.h"
+
 using seg_vec_t = str2d::seg::vector<int>; 
 using seg_set_t = str2d::seg::multiset<int>;
 
@@ -127,20 +129,30 @@ void orded_lookup_example() {
 
 ### Insertion
 If an element is inserted into a segment which isn't at full capacity all actions are confined to that segment(which makes the structure very cache friendly), otherwise an allocation of new segments and/or rebalancing to neighbouring segments have to occur.
-In the case than new allocations happen, new segment headers have to be inserted into the index. Once the index becomes large enough, the operation of inserting into the index starts to affect performance.
+In the case than new allocations happen, new segment headers have to be inserted into the index. 
+Once the index becomes large enough, the operation of inserting into the index starts to affect performance.
 ```cpp
-svec.insert(rand_iterator(svec), rand_int());
-sset.insert(rand_int());
+void insertion_example() {
+   seg_vec_t svec = init_vector();
+   seg_vec_t sset = init_set();
+
+   svec.insert(rand_iterator(svec), rand_int());
+   sset.insert(rand_int());
+}
 ```
 `insert` method of the set first has to look for the place where the object has to be inserted. If we happen to know
 where that place is, we can insert directly there without breaking the set invariants(the element before the place we're inserting must be less or equal to, and the element at the place we're inserting must be greater or equal to the element we want to insert). 
 ```cpp
-sset.insert_unguarded(x);
+void unguarded_set_insertion_example() {
+   seg_vec_t sset = init_set();
+   auto it = sset.lower_bound(x);
+   sset.insert_unguarded(it, x);
+}
 ```
 If we're inserting a sorted range of elements.   
 
 ### Erasure
-If an element is erased from a segment which holds more than "limit" elements, all operations are confided to that segment; otherwise
+If an element is erased from a segment which holds more than `limit` elements, all operations are confided to that segment; otherwise
 a deallocation of the segment and/or rebalancing to neighbouring segments have to occur. It has the same good cache locality and same problems with the index size getting to big as the number of elements in the container increases.
 ```cpp
 
@@ -150,6 +162,10 @@ a deallocation of the segment and/or rebalancing to neighbouring segments have t
 # Exception Safety
 
 # Map
+
+# UnitTests
+
+# Benchmarks
 
 # Conclusion
 In a sense, the segmented vector extends the application area of "flat" vector so it can be used as a set container for a large number of elements. As benchmarks show, that extension has limits which have to be taken into account. 
