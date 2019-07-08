@@ -6,7 +6,7 @@ The second motivation was [this](https://www.google.com/url?sa=t&source=web&rct=
 
 At the heart of the library lies a data structure called `str2d::seg::vector`, the rest are build on top of it; hence I'll only focus on it. Once you've understood how the segmented vector is implemented you'll easily deduce how to use it to implement `set`-like and `map`-like data structures.
 
-Note 1: There are currently only `str2d::seg::multiset` and `str2d::seg::multimap` data structures in this library apart from the `str2d::seg::vector`. The reason for exlusion of `str2d::seg::set` and `str2d::seg::map` is the lack of time; they will probably be included some time later.
+Note : There are currently only `str2d::seg::multiset` and `str2d::seg::multimap` data structures in this library apart from the `str2d::seg::vector`. The reason for exlusion of `str2d::seg::set` and `str2d::seg::map` is the lack of time; they will probably be included some time later.
 
 # Implementation and Usage
 Segmented vector is not a difficult structure to imagine. 
