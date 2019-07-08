@@ -6,8 +6,7 @@ The second motivation was [this](https://www.google.com/url?sa=t&source=web&rct=
 
 At the heart of the library lies a data structure called `str2d::seg::vector`, the rest are build on top of it; hence I'll only focus on it. Once you've understood how the segmented vector is implemented you'll easily deduce how to use it to implement `set`-like and `map`-like data structures.
 
-There are currently only `str2d::seg::multiset` and `str2d::seg::multimap` data structures in this library apart from the `str2d::seg::vector`. 
-The reason for exlusion of `str2d::seg::set` and `str2d::seg::map` is the lack of time; they will probably be included some time later.
+Note 1: There are currently only `str2d::seg::multiset` and `str2d::seg::multimap` data structures in this library apart from the `str2d::seg::vector`. The reason for exlusion of `str2d::seg::set` and `str2d::seg::map` is the lack of time; they will probably be included some time later.
 
 # Implementation and Usage
 Segmented vector is not a difficult structure to imagine. 
@@ -30,7 +29,6 @@ The algorithms in the library are aware of these coordinate structures, and use 
 
 ```cpp
 using seg_vec_t = str2d::seg::vector<int>; 
-using seg_set_t = str2d::seg::set<int>;
 
 using segmented_coordinate = str2d::SegmentedCoordinate<seg_vec_t>;
 
@@ -40,38 +38,66 @@ using segment_iterator = str2d::SegmentIterator<seg_vec_t>;
 using flat_iterator = str2d::FlatIterator<seg_vec_t>; 
 // or flat_iterator = str2d::FlatIterator<segmented_coordinate>
 
-seg_vec_t sv; 
-segmented_coordinate first = sv.begin(); 
-segmented_coordinate last = sv.end(); 
+seg_vec_t svec;
 
-segment_iterator first_seg = first.segment(); // or first_seg = str2d::segment(it)
-flat_iterator first_flat = first.flat();   // or first_flat = str2d::flat(it)
+segmented_coordinate first = svec.begin(); 
+segmented_coordinate last = svec.end(); 
 
-segment_iterator last_seg = last.segment(); // or first_seg = str2d::segment(it)
-flat_iterator first_flat = last.flat();   // or first_flat = str2d::flat(it)
+segment_iterator first_seg = first.segment(); // or first_seg = str2d::segment(first)
+flat_iterator first_flat = first.flat();   // or first_flat = str2d::flat(first)
+
+segment_iterator last_seg = last.segment(); // or first_seg = str2d::segment(last)
+flat_iterator first_flat = last.flat();   // or first_flat = str2d::flat(last)
+
+using seg_set_t = str2d::seg::multiset<int>;
+seg_vec_t sset;
+
+int rand_int(); // returns a random integer
+
+template<typename C>
+Iterator<C> rand_iterator(const C& c); // return a random iterator
+
+void init_vector(seg_vec_t& v); // initializes vector so that the objects inside it have random values
+
+void init_set(seg_set_t& set); // initializes set so that the objects inside it have have nondecreasing values
 ```
 Now in order to write any algorithm you would have to write a nested loop using segment and flat iterators. Considering
 that would be very cumbersome, the library already provides some basic generic algorithms which work on these coordinate structures.
 If you need an algorithm which is not in the library, just write it yourself in put it there; that, in the end, is the way standard
 template library was intended to be used, by always being extended.
 
-Note 1) These objects and typedefs will be used throughout the examples bellow. 
+Note 1: These objects, typedefs, and functions will be used throughout the examples bellow. 
 
-Note 2) I deliberately avoid using the keyword ```auto``` in order
-        to show exactly what type an object is. Very likely it would be used in real code.
+Note 2: I deliberately avoided using the keyword `auto` in these examples in order to show what are exact types of these
+        coordinate structures. Later on `auto` will be used.
 
 ### Insertion
 If an element is inserted into a segment which isn't at full capacity all actions are confined to that segment(which makes the structure very cache friendly), otherwise an allocation of new segments and/or rebalancing to neighbouring segments have to occur.
-In the case than new allocations happen, new segment headers have to be inserted into the index. Once the index becomes large enough, the operation of inserting into the index starts to affect performance. 
+In the case than new allocations happen, new segment headers have to be inserted into the index. Once the index becomes large enough, the operation of inserting into the index starts to affect performance.
+```cpp
+svec.insert(rand_iterator(svec), rand_int());
+sset.insert(rand_int());
+```
+`insert` method of the set first has to look for the place where the object has to be inserted. If we happen to know
+where that place is, we can insert directly there without breaking the set invariants(the element before the place we're inserting must be less or equal to, and the element at the place we're inserting must be greater or equal to the element we want to insert). 
+```cpp
+sset.insert_unguarded(x);
+```
+If we're inserting a sorted range of elements.   
 
 ### Erasure
 If an element is erased from a segment which holds more than "limit" elements, all operations are confided to that segment; otherwise
 a deallocation of the segment and/or rebalancing to neighbouring segments have to occur. It has the same good cache locality and same problems with the index size getting to big as the number of elements in the container increases.
+```cpp
+
+```
 
 ### Lookup
 If the data isn't sorted, linear lookup is the best you can get. If it is, as it is for `str2d::seg::multiset` and `str2d::seg::multimap` binary search(`lower_bound`, `upper_bound`, `equal_range`) can be used. Considering the segmented coordinate is a bidirectional iterator, regular binary search wouldn't be a massive improvement over the linear search. Binary search algorithms inside the library are aware of the coordinate structures presented above and can use them to an advantage. Firstly, a binary search over a range of segments is used to locate the segment on which our element resides. After that segment had been located, another binary search
 (regular one) is used to locate the flat iterator of that segment which points to the element we were looking for.
+```cpp
 
+```
 
 # Memory 
 
