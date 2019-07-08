@@ -26,7 +26,31 @@ using `begin` and `end` methods. Those methods of the segment iterator return a 
 3) Segmented coordinate - regular bidirectinal iterator; when dereferenced, returns the value type stored in the segmented vector.
 This type is returned when `begin` and `end` functions of the segmented vector are called. Inside it holds a segment iterator and a flat iterator pointing inside that segment. It bassically works like the iterator of `std::deque`, except it's not random access. Its segment iterator is accessed through `segment` method, while its flat iterator is accessed via `flat` method of the coordinate.
 
-The algorithms in the library are aware of these coordinate structures, and use them in nesteed loops to decrease the number of checks needed in each iterations. If only segmented coordinate(regular bidirectional iterator) were used, each iteration of an algorithm would have to check whether it's reached the end of the segment and the end of the entire range. By using nested loops, only check for the end of the entire range is needed in each iteration.  
+The algorithms in the library are aware of these coordinate structures, and use them in nesteed loops to decrease the number of checks needed in each iterations. If only segmented coordinate(regular bidirectional iterator) were used, each iteration of an algorithm would have to check whether it's reached the end of the segment and the end of the entire range. By using nested loops, only check for the end of the entire range is needed in each iteration.
+
+```cpp
+using seg_vec_t = str2d::seg::vector<int>; 
+using segmented_coordinate = str2d::SegmentedCoordinate<seg_vec_t>;
+using segment_iterator = str2d::SegmentIterator<seg_vec_t>; // or  segment_iterator = str2d::SegmentIterator<segmented_coordinate>
+using flat_iterator = str2d::FlatIterator<seg_vec_t>; // or flat_iterator = str2d::FlatIterator<segmented_coordinate>
+
+seg_vec_t sv; 
+segmented_coordinate first = sv.begin(); 
+segmented_coordinate last = sv.end(); 
+
+segment_iterator first_seg = first.segment(); // or first_seg = str2d::segment(it)
+flat_iterator first_flat = first.flat();   // or first_flat = str2d::flat(it)
+
+segment_iterator last_seg = last.segment(); // or first_seg = str2d::segment(it)
+flat_iterator first_flat = last.flat();   // or first_flat = str2d::flat(it)
+```
+Now in order to write any algorithm you would have to write a nested loop using segment and flat iterators. Considering
+that would be very cumbersome, the library already provides some basic generic algorithms which work on these coordinate structures.
+
+Note 1) These objects and typedefs will be used throughout the examples bellow. 
+
+Note 2) I deliberately avoid using the keyword ```auto``` in order
+        to show exactly what type an object is. Very likely it would be used in real code.
 
 ## Insertion
 If an element is inserted into a segment which isn't at full capacity all actions are confined to that segment(which makes the structure very cache friendly), otherwise an allocation of new segments and/or rebalancing to neighbouring segments have to occur.
@@ -39,6 +63,9 @@ a deallocation of the segment and/or rebalancing to neighbouring segments have t
 ## Lookup
 If the data isn't sorted, linear lookup is the best you can get. If it is, as it is for `str2d::seg::multiset` and `str2d::seg::multimap` binary search(`lower_bound`, `upper_bound`, `equal_range`) can be used. Considering the segmented coordinate is a bidirectional iterator, regular binary search wouldn't be a massive improvement over the linear search. Binary search algorithms inside the library are aware of the coordinate structures presented above and can use them to an advantage. Firstly, a binary search over a range of segments is used to locate the segment on which our element resides. After that segment had been located, another binary search
 (regular one) is used to locate the flat iterator of that segment which points to the element we were looking for.
+
+
+# Memory 
 
 # Exception Safety
 
