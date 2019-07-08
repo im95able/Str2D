@@ -90,8 +90,8 @@ void coordinates_example() {
 ```
 Now in order to write any algorithm you would have to write a nested loop using segment and flat iterators. Considering
 that would be very cumbersome to write every time, the library already provides some basic generic algorithms which work on these coordinate structures.
-If you need an algorithm which is not in the library, just write it yourself in put in there; that, in the end, that is the way standard
-template library was intended to be used; by using the already established algorithms and extending adding new usefull ones.
+If you need an algorithm which is not in the library, just write it yourself in put in there; that, in the end, is the way the standard
+template library was intended to be used; by using the already established algorithms and adding new useful ones.
 
 Note : I deliberately avoided using the keyword `auto` in these examples in order to show what are exact types of these
        coordinate structures. Later on `auto` will be used.
