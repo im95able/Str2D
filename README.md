@@ -46,12 +46,18 @@ segmented_coordinate last = svec.end();
 segment_iterator first_seg = first.segment(); // or first_seg = str2d::segment(first)
 flat_iterator first_flat = first.flat();   // or first_flat = str2d::flat(first)
 
-segment_iterator last_seg = last.segment(); // or first_seg = str2d::segment(last)
-flat_iterator first_flat = last.flat();   // or first_flat = str2d::flat(last)
-
 using seg_set_t = str2d::seg::multiset<int>;
 seg_vec_t sset;
+```
+Now in order to write any algorithm you would have to write a nested loop using segment and flat iterators. Considering
+that would be very cumbersome, the library already provides some basic generic algorithms which work on these coordinate structures.
+If you need an algorithm which is not in the library, just write it yourself in put it there; that, in the end, is the way standard
+template library was intended to be used, by always being extended.
 
+Note : I deliberately avoided using the keyword `auto` in these examples in order to show what are exact types of these
+        coordinate structures. Later on `auto` will be used.
+        
+```cpp
 int rand_int(); // returns a random integer
 
 template<typename C>
@@ -61,15 +67,7 @@ void init_vector(seg_vec_t& v); // initializes vector so that the objects inside
 
 void init_set(seg_set_t& set); // initializes set so that the objects inside it have have nondecreasing values
 ```
-Now in order to write any algorithm you would have to write a nested loop using segment and flat iterators. Considering
-that would be very cumbersome, the library already provides some basic generic algorithms which work on these coordinate structures.
-If you need an algorithm which is not in the library, just write it yourself in put it there; that, in the end, is the way standard
-template library was intended to be used, by always being extended.
-
-Note 1: These objects, typedefs, and functions will be used throughout the examples bellow. 
-
-Note 2: I deliberately avoided using the keyword `auto` in these examples in order to show what are exact types of these
-        coordinate structures. Later on `auto` will be used.
+Some functions which will be used in the examples bellow.
         
 ### Lookup
 If the data isn't sorted, linear lookup is the best you can get. If it is, as it is for `str2d::seg::multiset` and `str2d::seg::multimap` binary search(`lower_bound`, `upper_bound`, `equal_range`) can be used. Considering the segmented coordinate is a bidirectional iterator, regular binary search wouldn't be a massive improvement over the linear search. Binary search algorithms inside the library are aware of the coordinate structures presented above and can use them to an advantage. Firstly, a binary search over a range of segments is used to locate the segment on which our element resides. After that segment had been located, another binary search
