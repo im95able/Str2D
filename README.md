@@ -31,7 +31,7 @@ The algorithms in the library are aware of these coordinate structures, and use 
 
 Typedefs used in the examples bellow :
 ```cpp
-include "str2d.h"
+#include "str2d.h"
 
 using seg_vec_t = str2d::seg::vector<int>; 
 using seg_set_t = str2d::seg::multiset<int>;
@@ -208,7 +208,6 @@ void set_insert_sorted_unguarded_example() {
 If an element is erased from a segment which holds more than `limit` elements, all operations are confided to that segment; otherwise
 a deallocation of the segment and/or rebalancing to neighbouring segments have to occur. It has the same good cache locality and same problems with the index size affecting performance, as does insertion.
 ```cpp
-
 void erase_example() {
    seg_vec_t svec = init_vec();
    seg_set_t sset = init_set();
@@ -221,7 +220,7 @@ void erase_example() {
    
    auto[first, last] = sset.equal_range(100);
    sset.erase(first, last);
-   // erasing all objcts whose value is equal to 100
+   // erasing all objects whose value is equal to 100
 }
 ```
 # Memory 
