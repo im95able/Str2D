@@ -93,8 +93,23 @@ that would be very cumbersome to write every time, the library already provides 
 If you need an algorithm which is not in the library, just write it yourself in put in there; that, in the end, is the way the standard
 template library was intended to be used; by using already established algorithms and adding new useful ones.
 
-Note : I deliberately avoided using the keyword `auto` in these examples in order to show the exact types of these
+Note : Use of the keyword `auto` was deliberately avoided in these examples in order to show the exact types of these
        coordinate structures. Later on `auto` will be used.
+       
+       
+## Iteration
+For iteration we can always write a neested loop which would do the job
+```cpp
+void iterate_example() {
+   seg_vec_t svec = init_vec();g
+   auto [first_seg, first_flat] = str2d::seg::extract(svec.begin());
+   auto [last_seg, last_flat] = str2d::seg::extract(svec.end());
+   while(first_seg != last_seg) {
+   
+   }
+   
+}
+```
         
         
 ## Lookup
