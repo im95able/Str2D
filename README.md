@@ -4,7 +4,7 @@ Str2D is a library of 2D algorithms and data structures implemented in c++17 des
 While reading two books, `Elements of Programming`(which now you can read for [free](http://componentsprogramming.com/elements-of-programming-authors-edition/)) and `From mathematics to generic programming`, I stumbled upon a coordinate structure called the segmented iterator and realised I could implement it together with data structures and algorithms needed for its use.  
 The second motivation was [this](https://www.google.com/url?sa=t&source=web&rct=j&url=https://people.freebsd.org/~lstewart/articles/cpumemory.pdf&ved=2ahUKEwirjajuv57jAhVrxKYKHbfvDV4QFjAAegQIAhAB&usg=AOvVaw3VY2lnCBaI-B57Dric65cb) paper, which explained to me the inadequacy of data structures which utilize numerous single node allocations(e.g. `std::set` and the like).
 
-At the heart of the library lies a data structure called `str2d::seg::vector`, the rest are build on top of it; hence I'll only focus on it. Once you've understood how the segmented vector is implemented you'll easily deduce how to use it to implement `set`-like and `map`-like data structures.
+At the heart of the library lies a data structure called `str2d::seg::vector`, the rest are build on top of it; hence this guide will mainly focus on it. Once you've understood how the segmented vector is implemented you'll easily deduce how to use it to implement `set`-like and `map`-like data structures.
 
 Note : There are currently only `str2d::seg::multiset` and `str2d::seg::multimap` data structures in this library apart from the `str2d::seg::vector`. The reason for exlusion of `str2d::seg::set` and `str2d::seg::map` is the lack of time; they will probably be included some time later.
 
@@ -23,7 +23,7 @@ using `begin` and `end` methods of the segment iterator. Return type of those me
 2) Flat iterator - regular random access iterator; when dereferenced, returns the value type stored in the segmented vector.
 
 3) Segmented coordinate - regular bidirectinal iterator; when dereferenced, returns the value type stored in the segmented vector.
-This type is returned when `begin` and `end` functions of the segmented vector are called. Inside it holds a segment iterator and a flat iterator pointing inside that segment. It bassically works like the iterator of `std::deque`, except it's not random access. Its segment iterator is accessed through `segment` method, while its flat iterator is accessed via `flat` method of the coordinate.
+This type is returned when `begin` and `end` functions of the segmented vector are called. Inside, it holds a segment iterator and a flat iterator pointing somewhere inside that segment. It bassically works like the iterator of `std::deque`, except it's not random access. Its segment iterator is accessed through `segment` method, while its flat iterator is accessed via `flat` method of the coordinate.
 
 The algorithms in the library are aware of these coordinate structures, and use them in nesteed loops to decrease the number of checks needed in each iterations. If only segmented coordinate(regular bidirectional iterator) were used, each iteration of an algorithm would have to check whether it's reached the end of the segment and the end of the entire range. By using nested loops, only check for the end of the entire range is needed in each iteration. There is alse the check to see whether we have reached the last segment; it happens once for each segment in the range.
 
@@ -50,9 +50,9 @@ int rand_int(); // returns a random integer
 template<typename C>
 str2d::Iterator<C> rand_iterator(const C& c); // return a random iterator
 
-seg_vec_t init_vector(); // initializes vector so that the objects inside it have random values
+seg_vec_t init_vector(); // initializes a vector so that it's not empty and the objects inside it have random values
 
-seg_set_t init_set(); // initializes set so that the objects inside it have have nondecreasing values
+seg_set_t init_set(); // initializes a set so that it's not empty and the objects inside it have have nondecreasing values
 ```
 
 ```cpp
@@ -85,23 +85,22 @@ void coordinates_example() {
       *(middle.begin() + (middle.size() >> 1)) += 1;
       ++middle_seg;
    }
-   // increments the value in the middle of every segment in the segment range [middle_seg, last.seg()) 
+   // increments the value of the object in the middle of every segment in the segment range [middle_seg, last.seg()) 
 }
 ```
 Now in order to write any algorithm you would have to write a nested loop using segment and flat iterators. Considering
 that would be very cumbersome to write every time, the library already provides some basic generic algorithms which work on these coordinate structures.
 If you need an algorithm which is not in the library, just write it yourself in put in there; that, in the end, is the way the standard
-template library was intended to be used; by using the already established algorithms and adding new useful ones.
+template library was intended to be used; by using already established algorithms and adding new useful ones.
 
-Note : I deliberately avoided using the keyword `auto` in these examples in order to show what are exact types of these
+Note : I deliberately avoided using the keyword `auto` in these examples in order to show the exact types of these
        coordinate structures. Later on `auto` will be used.
         
         
 ## Lookup
-If the data isn't sorted, linear lookup is the best you can get. If it is, as it is for `str2d::seg::multiset` and `str2d::seg::multimap` binary search(`lower_bound`, `upper_bound`, `equal_range`) can be used. Considering the segmented coordinate is a bidirectional iterator, regular binary search wouldn't be a massive improvement over the linear search. Binary search algorithms inside the library are aware of the coordinate structures presented above and can use them to an advantage. Firstly, a binary search over a range of segments is used to locate the segment on which our element resides. After that segment had been located, another binary search
-(regular one) is used to locate the flat iterator of that segment, which points to the element we were looking for.
+If the data isn't sorted, linear lookup is the best you can get. If it is, as it is for `str2d::seg::multiset` and `str2d::seg::multimap`, binary search(`lower_bound`, `upper_bound`, `equal_range`) can be used. Considering the segmented coordinate is a bidirectional iterator, regular binary search wouldn't be a massive improvement over the linear search. Binary search algorithms inside the library are aware of the coordinate structures presented above and can use them to an advantage. Firstly, a binary search over a range of segments is used to locate the segment on which our element resides. After that segment had been located, another binary search(regular one) is used to locate the flat iterator of that segment which points to the element we were looking for.
 ```cpp
-void unorded_lookup_example() {
+void linear_lookup_example() {
    seg_vec_t svec = init_vector();
    
    auto it = str2d::seg::find(svec.begin(), svec.end(), rand_int());
@@ -112,7 +111,7 @@ void unorded_lookup_example() {
    }
 }
 
-void orded_lookup_example() {
+void binary_lookup_example() {
    seg_set_t sset = init_set();
    
    int r = rand_int();
@@ -135,7 +134,7 @@ If an element is inserted into a segment which isn't at full capacity all action
 In the case than new allocations happen, new segment headers have to be inserted into the index. 
 Once the index becomes large enough, the operation of inserting into the index starts to affect performance.
 ```cpp
-void insertion_example() {
+void insert_example() {
    seg_vec_t svec = init_vector();
    seg_vec_t sset = init_set();
 
@@ -144,17 +143,30 @@ void insertion_example() {
 }
 ```
 ### Unguarded Insertion
-`insert` method of the set first has to look for the place where the object has to be inserted. If we happen to know
-where that place is, we can insert the element directly there. Unguarded insert methods of `set` and `map` data structures don't do any checks to see whether the the place we're inserting is valid for the given element. We must insure ourselves that the set invariants aren't broken(the element before the place we're inserting must be less or equal to, and the element at the place we're inserting must be greater or equal to the element we want to insert). 
+`insert` method of `set` first has to look for the place where the object has to be inserted. If we happen to know
+where that place is, we can insert the element directly there. Unguarded insert methods don't do any checks to see whether the place we're inserting is valid for the given element. We must insure ourselves that the invariants aren't broken(the element before the place we're inserting must be less than or equal to, and the element at the place we're inserting must be greater than or equal to the element we want to insert). Consdering `str2d::seg::set` is build on top of `str2d::seg::vector`, you can probaly guess that `insert_unguarded` methods are just wrappers for `str2d::seg::vector::insert`.
 ```cpp
-void unguarded_set_insertion_example() {
+void set_insert_unguarded_example() {
    seg_vec_t sset = init_set();
    auto it = sset.lower_bound(x);
-   sset.insert_unguarded(it, x);
+   auto[first, last] = sset.insert_unguarded(it, x);
+   // inserts 100 new objects which are equal to *it at it position(middle of the range in this case)
+   
 }
 ```
 ### Unguarded Range Insertion
-If we're inserting a sorted range of elements.   
+Sometimes we know that inserting an entire range at some positin won't break the `set` invariants(inserted range must be sorted + the element before the place we're inserting must be less than or equal to the first element of the inserted range, and the element at the place we're inserting must be greater than or equal to the last element of the inserted range).
+```cpp
+void set_insert_sorted_unguarded_example() {
+   seg_vec_t sset = init_set();
+   auto it = str2d::seg::successor(sset.begin(), set.size() >> 1);
+   std::vector<int> v(100, *it);
+   sset.insert_sorted_unguarded(it, v.begin(), 100);
+   //
+}
+```
+
+
 
 ## Erasure
 If an element is erased from a segment which holds more than `limit` elements, all operations are confided to that segment; otherwise
