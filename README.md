@@ -52,9 +52,11 @@ int rand_int(); // returns a random integer
 template<typename C>
 str2d::Iterator<C> rand_iterator(const C& c); // return a random iterator
 
-seg_vec_t init_vector(); // initializes a vector so that it's not empty and the objects inside it have random values
+seg_vec_t init_vector(); 
+// initializes a vector so that it's not empty and the objects inside it have random values
 
-seg_set_t init_set(); // initializes a set so that it's not empty and the objects inside it have have nondecreasing values
+seg_set_t init_set(); 
+// initializes a set so that it's not empty and the objects inside it have have nondecreasing values
 
 struct increment
 {
@@ -82,7 +84,8 @@ void coordinates_example() {
       *middle_flat += 1; 
       ++middle_flat;
    }
-   // increments the value pointed to by every flat iterator in the range [middle_flat, middle.end())
+   // increments the value pointed to by every flat iterator 
+   // in the range [middle_flat, middle.end())
    
    segment_iterator middle_seg = middle.seg();      
    // or middle_seg = str2d::seg(middle)
@@ -92,7 +95,8 @@ void coordinates_example() {
       *(middle.begin() + (middle.size() >> 1)) += 1;
       ++middle_seg;
    }
-   // increments the value of the object in the middle of every segment in the segment range [middle_seg, last.seg()) 
+   // increments the value of the object in the middle of every segment 
+   // in the segment range [middle_seg, last.seg()) 
 }
 ```
 Now in order to write any algorithm you would have to write a nested loop using segment and flat iterators. Considering
