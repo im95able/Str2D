@@ -14,7 +14,7 @@ Segmented vector is not a difficult structure to imagine.
 In it, an `std::vector` is used as an index which holds segment headers, structures holding pointers to segments of memory and possibly some meta data(detailed explaination of segment headers will be given bellow). Those segments are where the data is actually held. The capacity of every segment is constant; the size on the other hand can vary.
 Each segment holds at least half the capacity(`limit`) elements on it, except the first one; it can hold as many(less than capacity) or as little(more than 0) as it needs.
 
-### Coordinate Structures/Iterators
+## Coordinate Structures/Iterators
 Segmented vector utilizes 3 kinds of coordinate structures : 
 1) Segment iterator - random access iterator that iterates over a range of segments. It can't be dereferenced like ordinary
 random access iterators; data inside it is accessed like it's accessed in a sequence container(e.g. `std::vector`), i.e. by
@@ -97,7 +97,7 @@ Note : I deliberately avoided using the keyword `auto` in these examples in orde
        coordinate structures. Later on `auto` will be used.
         
         
-### Lookup
+## Lookup
 If the data isn't sorted, linear lookup is the best you can get. If it is, as it is for `str2d::seg::multiset` and `str2d::seg::multimap` binary search(`lower_bound`, `upper_bound`, `equal_range`) can be used. Considering the segmented coordinate is a bidirectional iterator, regular binary search wouldn't be a massive improvement over the linear search. Binary search algorithms inside the library are aware of the coordinate structures presented above and can use them to an advantage. Firstly, a binary search over a range of segments is used to locate the segment on which our element resides. After that segment had been located, another binary search
 (regular one) is used to locate the flat iterator of that segment, which points to the element we were looking for.
 ```cpp
@@ -130,7 +130,7 @@ void orded_lookup_example() {
 }
 ```
 
-### Insertion
+## Insertion
 If an element is inserted into a segment which isn't at full capacity all actions are confined to that segment(which makes the structure very cache friendly), otherwise an allocation of new segments and/or rebalancing to neighbouring segments have to occur.
 In the case than new allocations happen, new segment headers have to be inserted into the index. 
 Once the index becomes large enough, the operation of inserting into the index starts to affect performance.
@@ -143,8 +143,9 @@ void insertion_example() {
    sset.insert(rand_int());
 }
 ```
+### Unguarded Insertion
 `insert` method of the set first has to look for the place where the object has to be inserted. If we happen to know
-where that place is, we can insert directly there without breaking the set invariants(the element before the place we're inserting must be less or equal to, and the element at the place we're inserting must be greater or equal to the element we want to insert). 
+where that place is, we can insert the element directly there. Unguarded insert methods of `set` and `map` data structures don't do any checks to see whether the the place we're inserting is valid for the given element. We must insure ourselves that the set invariants aren't broken(the element before the place we're inserting must be less or equal to, and the element at the place we're inserting must be greater or equal to the element we want to insert). 
 ```cpp
 void unguarded_set_insertion_example() {
    seg_vec_t sset = init_set();
@@ -152,9 +153,10 @@ void unguarded_set_insertion_example() {
    sset.insert_unguarded(it, x);
 }
 ```
+### Unguarded Range Insertion
 If we're inserting a sorted range of elements.   
 
-### Erasure
+## Erasure
 If an element is erased from a segment which holds more than `limit` elements, all operations are confided to that segment; otherwise
 a deallocation of the segment and/or rebalancing to neighbouring segments have to occur. It has the same good cache locality and same problems with the index size getting to big as the number of elements in the container increases.
 ```cpp
@@ -171,8 +173,8 @@ a deallocation of the segment and/or rebalancing to neighbouring segments have t
 # Benchmarks
 
 # Conclusion
-In a sense, the segmented vector extends the application area of "flat" vector so it can be used as a set container for a large number of elements. As benchmarks show, that extension has limits which have to be taken into account. 
+In a sense, the segmented vector extends the application area of the "flat" vector so it can be used as a set container for a large number of elements. As benchmarks show, that extension has limits which have to be taken into account. 
 
-Google's btree is probably a safe bet as a drop in replacement for the std map and set data structures. If on the other hand iterations dominate other operations, or you're constantly erasing and inserting entire ranges, you could consider using the segmented vector.
+Google's btree is probably a safe bet as a drop in replacement for the `std::map` and `std::map` data structures. If on the other hand iterations dominate other operations, or you're constantly erasing and inserting entire ranges and not single elements, you could consider using the segmented vector.
 
 Needless to say, these opinions mean little in comparison to actual benchmarks of your code.
