@@ -64,7 +64,7 @@ void coordinates_example() {
    segmented_coordinate last = svec.end();
 
    segmented_coordinate middle = str2d::seg::successor(first, svec.size() >> 1); 
-   // extracts segment and flat iterators from the coordinate
+   // "str2d::seg::successor" extracts segment and flat iterators from the coordinate
    // and advances much faster than a regular bidirectioanl iterator would
    
    flat_iterator middle_flat = middle.flat();      
@@ -99,7 +99,7 @@ Note : I deliberately avoided using the keyword `auto` in these examples in orde
         
 ### Lookup
 If the data isn't sorted, linear lookup is the best you can get. If it is, as it is for `str2d::seg::multiset` and `str2d::seg::multimap` binary search(`lower_bound`, `upper_bound`, `equal_range`) can be used. Considering the segmented coordinate is a bidirectional iterator, regular binary search wouldn't be a massive improvement over the linear search. Binary search algorithms inside the library are aware of the coordinate structures presented above and can use them to an advantage. Firstly, a binary search over a range of segments is used to locate the segment on which our element resides. After that segment had been located, another binary search
-(regular one) is used to locate the flat iterator of that segment which points to the element we were looking for.
+(regular one) is used to locate the flat iterator of that segment, which points to the element we were looking for.
 ```cpp
 void unorded_lookup_example() {
    seg_vec_t svec = init_vector();
@@ -117,6 +117,9 @@ void orded_lookup_example() {
    
    int r = rand_int();
    auto it = str2d::seg::lower_bound(sset.begin(), sset.end(), r);
+   // or just use lower_bound method of the set
+   // it = sset.lower_bound(r);
+   
    if(it != svec.end() && *it == r) {
       ++(*it);
       // element has been found
