@@ -116,11 +116,7 @@ void iterate_by_hand_example() {
    auto [first_seg, first_flat] = str2d::seg::extract(svec.begin());
    auto [last_seg, last_flat] = str2d::seg::extract(str2d::seg::successor(svec.begin(), svec.size() >> 1));
    while(first_seg != last_seg) {
-      auto _last_flat = first_seg.end();
-      while(first_flat != _last_flat) {
-         ++*first_flat;
-         ++first_flat;
-      }
+      std::for_each(first_flat, first_seg.end(), increment());
       ++first_seg;
       first_flat = first_seg.begin();
    }
