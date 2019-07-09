@@ -132,7 +132,7 @@ void iterator_example() {
 ```
         
 ## Lookup
-If the data isn't sorted, linear lookup is the best you can get. If it is, as it is for `str2d::seg::multiset` and `str2d::seg::multimap`, binary search(`lower_bound`, `upper_bound`, `equal_range`) can be used. Considering the segmented coordinate is a bidirectional iterator, regular binary search wouldn't be a massive improvement over the linear search. Binary search algorithms inside the library are aware of the coordinate structures presented above and can use them to an advantage. Firstly, a binary search over a range of segments is used to locate the segment on which our element resides. After that segment had been located, another binary search(regular one) is used to locate the flat iterator of that segment which points to the element we were looking for.
+If the data isn't sorted, linear lookup is the best we can get. If it is, as it is for `str2d::seg::multiset` and `str2d::seg::multimap`, binary search(`lower_bound`, `upper_bound`, `equal_range`) can be used. Considering the segmented coordinate is a bidirectional iterator, regular binary search wouldn't be a massive improvement over the linear search. Binary search algorithms inside the library are aware of the coordinate structures presented above and can use them to an advantage. Firstly, a binary search over a range of segments is used to locate the segment on which our element resides. After that segment had been located, another binary search(regular one) is used to locate the flat iterator of that segment which points to the element we were looking for.
 ```cpp
 void linear_lookup_example() {
    seg_vec_t svec = init_vector();
