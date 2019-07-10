@@ -193,10 +193,10 @@ void set_insert_sorted_unguarded_example() {
    seg_vec_t sset = init_set();
    auto it = str2d::seg::successor(sset.begin(), set.size() >> 1);
    std::vector<int> v(100, *it);
-   sset.insert_sorted_unguarded(it, v.begin(), 100);
+   auto[first, last] = sset.insert_sorted_unguarded(it, v.begin(), 100);
    // inserts 100 new objects which are equal to "*it" at the "it" position(middle of the range in this case)
    
-   if(last != sset.end() && *last != *first) {
+   if(last == sset.end() || *last != *first) {
       str2d::seg::for_each(first, last, increment());
       // iterating over the inserted range and incrementing the value of every object in it
       // we made sure it won't break the invariant by assuring that the element after the range has a 
