@@ -14,7 +14,7 @@ Segmented vector is not a difficult structure to imagine.
 In it, an `std::vector` is used as an index which holds segment headers, structures holding pointers to segments of memory and possibly some meta data(detailed explaination of segment headers will be given bellow). Those segments are where the data is actually held. The capacity of every segment is constant; the size on the other hand can vary.
 Each segment holds at least half the capacity(`limit`) elements on it, except the first one; it can hold as many(less than capacity) or as little(more than 0) as it needs.
 
-Note : Objects stored in `str2d::seg::multiset` and `str2d::seg::multimap` are all mutable. While inserting and erasing, they're constanly being shifted around. For `str2d::seg::multiset`, I could have made the objects constant while the user is manipulating them and mutable when they're used internally; I couldn't do the same for `str2d::seg::multimap`, so I decided to leave them mutable for both data structures. The user will have to take care not to mess up the invariants. On the other hand, this will prove useful when we want to bypass some unnecessary checks.
+Objects stored in `str2d::seg::multiset` and `str2d::seg::multimap` are all mutable. For `str2d::seg::multiset`, I could have made the objects constant while the user is manipulating them and mutable when they're used internally; I couldn't do the same for `str2d::seg::multimap`, so I decided to leave them mutable for both data structures. The user will have to take care not to mess up the invariants. On the other hand, this will prove useful when we want to bypass some unnecessary checks.
 
 ## Coordinate Structures/Iterators
 Segmented vector utilizes 3 kinds of coordinate structures : 
