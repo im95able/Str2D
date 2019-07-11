@@ -225,10 +225,16 @@ void erase_example() {
    // erasing all objects whose value is equal to 100
 }
 ```
+
+## Segment Header
+
+
 # Memory 
 
-All segments(except the first one) are at least half fulls. At most we're wasting half the allocated segment memory, at the average 1/4.
-For every segment we also need a pointer plus two (16 bit)indices. So for every segment the amount of all memory allocated on heap(index + segments) is at most `number_of_allocated_segments * sizeof(tuple<pointer, uint16_t, uint16_t>) * sizeof(value_type) * capacity / 2`.
+All segments(except the first one) are at least half full. For every segment allocated we need a pointer plus two (16 bit)indices. So the amount of all memory(in bytes) allocated on heap(index + segments) which is not used to store our objects is at most : 
+`nm_allocated_segments * ((segment_capacity / 2) * sizeof(value_type) + sizeof(tuple<value_type*, uint16_t, uint16_t>)`
+and on the average :
+`nm_allocated_segments * ((segment_capacity / 4) * sizeof(value_type) + sizeof(tuple<value_type*, uint16_t, uint16_t>)`
 
 # Exception Safety
 I didn't know of a way to implement exception safety so that there's always basic exception guarantee, without losing efficiency.
