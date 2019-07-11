@@ -31,7 +31,7 @@ The algorithms in the library are aware of these coordinate structures, and use 
 
 Typedefs used in the examples bellow :
 ```cpp
-#include "str2d.h"
+#include <str2d.h>
 
 using seg_vec_t = str2d::seg::vector<int>; 
 using seg_set_t = str2d::seg::multiset<int>;
@@ -45,7 +45,7 @@ using flat_iterator = str2d::FlatIterator<seg_vec_t>;
 // or flat_iterator = str2d::FlatIterator<segmented_coordinate>
 ``` 
 
-Functions  used in the examples bellow :
+Functions used in the examples bellow :
 ```cpp
 int rand_int(); // returns a random integer
 
@@ -186,7 +186,7 @@ void set_insert_unguarded_example() {
    auto[first, last] = sset.insert_unguarded(it, x);
 }
 ```
-### Unguarded Range Insertion
+### Sorted Range Unguarded Insertion
 Sometimes we know that inserting an entire range at some position won't break the `set` invariants(inserted range must be sorted + the element before the place we're inserting must be less than or equal to the first element of the inserted range, and the element at the place we're inserting must be greater than or equal to the last element of the inserted range).
 ```cpp
 void set_insert_sorted_unguarded_example() {
@@ -195,6 +195,8 @@ void set_insert_sorted_unguarded_example() {
    std::vector<int> v(100, *it);
    auto[first, last] = sset.insert_sorted_unguarded(it, v.begin(), 100);
    // inserts 100 new objects which are equal to "*it" at the "it" position(middle of the range in this case)
+   // or sset.insert_move_sorted_unguarded(it, v.begin(), 100);
+   // move constructs the range from the objects in the range [v.begin(), v.begin() + 100) 
    
    if(last == sset.end() || *last != *first) {
       str2d::seg::for_each(first, last, increment());
@@ -226,15 +228,29 @@ void erase_example() {
 # Memory 
 
 # Exception Safety
+I didn't know of a way to implement exception safety so that there's always basic exception guarantee, without losing efficiency.
+Basically if the type we're storing is POD(Plain Old Data), we everywhere have basic exception guarantee.
+
+## Erasure
+If the object type we're storing has a move constructor or a copy constructor which don't throw, we have basic exception guarantee; otherwise no guarantee is given.
+
+## Copy Insertion
+By copy insertion we mean calling `insert` with an lvalue reference or `insert_sorted_unguarded` or `insert_sorted`.
+If both the copy and the move constructor don't throw, we have basic exception guarantee, otherwise no guarantee.
+
+## Move Insertion
+By copy insertion we mean calling `insert` with an rvalue reference or `insert_move_sorted_unguarded` or `insert_move_sorted`.
+If the move constructor doesn't throw, we have basic exception guarantee, otherwise no guarantee.
 
 # Map
+
 
 # UnitTests
 
 # Benchmarks
 
 # Conclusion
-In a sense, the segmented vector extends the application area of the "flat" vector so it can be used as a set container for a large number of elements. As benchmarks show, that extension has limits which have to be taken into account. 
+In a sense, the segmented vector extends the application area of the "flat" vector so it can be used as a set or as a container where insertion order matters, for a large number of elements. As benchmarks show, that extension has limits which have to be taken into account. 
 
 Google's btree is probably a safe bet as a drop in replacement for the `std::map` and `std::map` data structures. If on the other hand iterations dominate other operations, or you're constantly erasing and inserting entire ranges and not single elements, you could consider using the segmented vector.
 
