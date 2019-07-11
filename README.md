@@ -235,8 +235,8 @@ All segments(except the first one) are at least half full. For every segment all
 ```cpp
 float memory_overhead(const seg_vec_t& svec) {
    using value_type = str2d::ValueType<svec>;
-   const float per_segment_index_overhead = sizeof(std::tuple<value_type*, uint16_t, uint16_t>); 
-   const float segment_capacity = str2d::seg::SegmentCapacity<seg_vec_t>;
+   const float per_segment_index_overhead = static_cast<float>(sizeof(std::tuple<value_type*, uint16_t, uint16_t>)); 
+   const float segment_capacity = static_cast<float>(str2d::seg::SegmentCapacity<seg_vec_t>);
    const float nm_segments = static_cast<float>(svec.index.size());
    const float used_segment_bytes = static_cast<float>(svec.index.size() * sizeof(T));
    const float unused_segment_bytes = nm_segments * segment_capacity - used_segment_bytes;
@@ -244,7 +244,7 @@ float memory_overhead(const seg_vec_t& svec) {
    return (index_bytes + unused_segment_bytes) / used_segment_bytes;
 }
 ```
-If we're storing small objects, e.g. pointers, we'll almost certainly save up some memory in comparison to `std::set`, but not in comparison to google's `btree`. 
+If we're storing small objects, for example up to 16 bytes or less, we'll almost certainly save up some memory in comparison to `std::set`, but not in comparison to google's `btree`. 
 
 Note : If anyone is willing(and unlike me, able) to the statistical calculations to show the exact memory utilization in comparison to other data structures and/or do tests which show how much memory is being used, please do so, and send me the results. 
 
