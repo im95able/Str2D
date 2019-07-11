@@ -231,13 +231,23 @@ void erase_example() {
 
 # Memory 
 
-All segments(except the first one) are at least half full. For every segment allocated we need a pointer plus two (16 bit)indices. So the amount of all memory(in bytes) allocated on heap(index + segments) which is not used to store our objects is at most : 
+All segments(except the first one) are at least half full. For every segment allocated we need a pointer plus two (16 bit)indices. So the equation for the amount of all memory(in bytes) allocated on heap(index + segments) which is not used to store our objects is :
+```cpp
+float memory_overhead(const seg_vec_t& svec) {
+   using value_type = str2d::ValueType<svec>;
+   const float per_segment_index_overhead = sizeof(std::tuple<value_type*, uint16_t, uint16_t>); 
+   const float segment_capacity = str2d::seg::SegmentCapacity<seg_vec_t>;
+   const float nm_segments = static_cast<float>(svec.index.size());
+   const float used_segment_bytes = static_cast<float>(svec.index.size() * sizeof(T));
+   const float unused_segment_bytes = nm_segments * segment_capacity - used_segment_bytes;
+   const float index_bytes = static_cast<float>(svec.index.capacity()) * per_segment_index_overhead;
+   return (index_bytes + unused_segment_bytes) / used_segment_bytes;
+}
+```
+If we're storing small objects, e.g. pointers, we'll almost certainly save up some memory in comparison to `std::set`, but not in comparison to google's `btree`. 
 
-`nm_elements / (segment_capacity * 0.5) * ((segment_capacity / 2) * sizeof(value_type) + sizeof(tuple<value_type*, uint16_t, uint16_t>)`
+Note : If anyone is willing(and unlike me, able) to the statistical calculations to show the exact memory utilization in comparison to other data structures and/or do tests which show how much memory is being used, please do so, and send me the results. 
 
-and on the average :
-
-`nm_elements / (segment_capacity * 0.5) * ((segment_capacity / 4) * sizeof(value_type) + sizeof(tuple<value_type*, uint16_t, uint16_t>)`
 
 # Exception Safety
 I didn't know of a way to implement exception safety so that there's always basic exception guarantee, without losing efficiency.
