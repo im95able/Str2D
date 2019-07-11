@@ -227,6 +227,9 @@ void erase_example() {
 ```
 # Memory 
 
+All segments(except the first one) are at least half fulls. At most we're wasting half the allocated segment memory, at the average 1/4.
+For every segment we also need a pointer plus two (16 bit)indices. So for every segment the amount of all memory allocated on heap(index + segments) is at most `number_of_allocated_segments * sizeof(tuple<pointer, uint16_t, uint16_t>) * sizeof(value_type) * capacity / 2`.
+
 # Exception Safety
 I didn't know of a way to implement exception safety so that there's always basic exception guarantee, without losing efficiency.
 Basically if the type we're storing is POD(Plain Old Data), we everywhere have basic exception guarantee.
