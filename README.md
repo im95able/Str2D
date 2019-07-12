@@ -231,11 +231,11 @@ void erase_example() {
 The segments used in Str2D library are double-ended; which means that the begining of user data isn't necessarily at the beginning of the segment; becase of that, two indices are needed; one indicating the beginning of user data, other indicating the ending.
 Taking this into consideration there are, to my knowledge, two types which model `SegmentHeader` concept.
 
-# Small Segment Header
+### Small Segment Header
 Inside itself, stores only a pointer to a segment. Exactly next to the memory allocated for the segmented, there is an area of memory allocated for the two indices.
 
-# Big Segment Header
-Inside itself, stores only a pointer to a segment. Exactly next to the memory allocated for the segmented, there is an area of memory allocated for the two indices.
+### Big Segment Header
+Inside itself, stores only both the pointer to a segment, and two indices indicating begininng and ending. 
 
 
 # Memory 
