@@ -227,6 +227,15 @@ void erase_example() {
 ```
 
 ## Segment Header
+`SegmentHeader` is a concept which allows us to abstract the way we access data inside segments.
+The segments used in Str2D library are double-ended; which means that the begining of user data isn't necessarily at the beginning of the segment; becase of that, two indices are needed; one indicating the beginning of user data, other indicating the ending.
+Taking this into consideration there are, to my knowledge, two types which model `SegmentHeader` concept.
+
+# Small Segment Header
+Inside itself, stores only a pointer to a segment. Exactly next to the memory allocated for the segmented, there is an area of memory allocated for the two indices.
+
+# Big Segment Header
+Inside itself, stores only a pointer to a segment. Exactly next to the memory allocated for the segmented, there is an area of memory allocated for the two indices.
 
 
 # Memory 
@@ -235,12 +244,12 @@ All segments(except the first one) are at least half full. For every segment all
 ```cpp
 float memory_overhead(const seg_vec_t& svec) {
    using value_type = str2d::ValueType<svec>;
-   const float per_segment_index_overhead = static_cast<float>(sizeof(std::tuple<value_type*, uint16_t, uint16_t>)); 
-   const float segment_capacity = static_cast<float>(str2d::seg::SegmentCapacity<seg_vec_t>);
-   const float nm_segments = static_cast<float>(svec.index.size());
-   const float used_segment_bytes = static_cast<float>(svec.index.size() * sizeof(T));
-   const float unused_segment_bytes = nm_segments * segment_capacity - used_segment_bytes;
-   const float index_bytes = static_cast<float>(svec.index.capacity()) * per_segment_index_overhead;
+   float per_segment_index_overhead = static_cast<float>(sizeof(std::tuple<value_type*, uint16_t, uint16_t>)); 
+   float segment_capacity = static_cast<float>(str2d::seg::SegmentCapacity<seg_vec_t>);
+   float nm_segments = static_cast<float>(svec.index.size());
+   float used_segment_bytes = static_cast<float>(svec.index.size() * sizeof(T));
+   float unused_segment_bytes = nm_segments * segment_capacity - used_segment_bytes;
+   float index_bytes = static_cast<float>(svec.index.capacity()) * per_segment_index_overhead;
    return (index_bytes + unused_segment_bytes) / used_segment_bytes;
 }
 ```
@@ -263,9 +272,6 @@ If both the copy and the move constructor don't throw, we have basic exception g
 ## Move Insertion
 By copy insertion we mean calling `insert` with an rvalue reference or `insert_move_sorted_unguarded` or `insert_move_sorted`.
 If the move constructor doesn't throw, we have basic exception guarantee, otherwise no guarantee.
-
-# Map
-
 
 # UnitTests
 
