@@ -232,10 +232,12 @@ The segments used in Str2D library are double-ended; which means that the begini
 Taking this into consideration there are, to my knowledge, two types which model `SegmentHeader` concept.
 
 ### Small Segment Header
-Inside itself, stores only a pointer to a segment. Exactly next to the memory allocated for the segmented, there is an area of memory allocated for the two indices.
+Stores only a pointer to a segment. Exactly next to the memory allocated for the segmented, there is an area of memory allocated for the two indices.
 
 ### Big Segment Header
-Inside itself, stores only both the pointer to a segment, and two indices indicating begininng and ending. 
+Stores both the pointer to a segment, and the two indices indicating begininng and ending. 
+
+Smaller header means smaller index. On the other hand, one extra cache miss which might occur, when we need to find the beginning or the ending of user data, mean that almost all operations are slower wth small than big segment header(this will be shown in Benchmarks section). By default the library uses big headers; if the need arises, another type which satisfies `SegmentHeader` concept can easily replace the default.
 
 
 # Memory 
@@ -276,6 +278,9 @@ If the move constructor doesn't throw, we have basic exception guarantee, otherw
 # UnitTests
 
 # Benchmarks
+
+# Installation
+You'll need a c++17 compiler. Place all files inside Str2D directory of this repository, in a directory of your choosing project. Include str2d.h header file and you're ready to go.
 
 # Conclusion
 In a sense, the segmented vector extends the application area of the "flat" vector so it can be used as a set or as a container where insertion order matters, for a large number of elements. As benchmarks show, that extension has limits which have to be taken into account. 
