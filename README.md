@@ -289,3 +289,5 @@ In a sense, the segmented vector extends the application area of the "flat" vect
 Google's btree is probably a safe bet as a drop in replacement for the `std::map` and `std::map` data structures. If on the other hand iterations dominate other operations, or you're constantly erasing and inserting more than one element, you could consider using the segmented vector.
 
 Needless to say, these opinions mean little in comparison to actual benchmarks of your code.
+
+This library is begging to be expanded with more data structures, algorithms and different implementations of all concepts inside of it, just as this Readme could be expanded with more tests and deeper explainantions(time didn't allow me to add everything I wanted in both the library and this document; hopefully in the future I'll find some time). If you want to do any of that, feel free to do it.
