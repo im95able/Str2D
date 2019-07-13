@@ -277,8 +277,6 @@ If both the copy and the move constructor don't throw, we have basic exception g
 By copy insertion we mean calling `insert` with an rvalue reference or `insert_move_sorted_unguarded` or `insert_move_sorted`.
 If the move constructor doesn't throw, we have basic exception guarantee, otherwise no guarantee.
 
-# UnitTests
-
 # Benchmarks
 
 # Installation
