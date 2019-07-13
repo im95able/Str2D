@@ -278,7 +278,9 @@ struct segment_iterator
 	using header_iterator = HeaderIt;
 	using header_type = IteratorValueType<header_iterator>;
 	using flat_iterator = ValueType<header_type>*;
+	using iterator = flat_iterator;
 	using const_flat_iterator = const ValueType<header_type>*;
+	using const_iterator = const_flat_iterator;
 	using value_type = ValueType<header_type>;
 	using difference_type = IteratorDifferenceType<header_iterator>;
 	using size_type = segment_size_t;
@@ -376,7 +378,9 @@ struct const_segment_iterator
 	using const_header_iterator = ConstHeaderIt;
 	using header_type = IteratorValueType<const_header_iterator>;
 	using flat_iterator = const ValueType<header_type>*;
+	using iterator = flat_iterator;
 	using const_flat_iterator = flat_iterator;
+	using const_iterator = const_flat_iterator;
 	using value_type = ValueType<header_type>;
 	using difference_type = IteratorDifferenceType<const_header_iterator>;
 	using size_type = segment_size_t;
@@ -474,7 +478,7 @@ struct const_segment_iterator
 
 
 //************************************************************************
-// SEGMENT COORDIANTE
+// SEGMENTED COORDINATE
 //************************************************************************
 template<typename SegmentIt, typename ConstSegmentIt>
 struct segmented_coordinate
@@ -565,10 +569,15 @@ struct segmented_coordinate
 
 	flat_iterator flat() { return _flat; }
 	segment_iterator segment() { return _seg; }
+	std::pair<segment_iterator, flat_iterator> extract() { return { seg(), flat() }; }
+
 	const_flat_iterator cflat() const { return const_flat_iterator(_flat); }
 	const_segment_iterator csegment() const { return const_segment_iterator(_seg); }
+	std::pair<const_segment_iterator, const_flat_iterator> cextract() const { return { cseg(), cflat() }; }
+
 	const_flat_iterator flat() const { return cflat(); }
 	const_segment_iterator segment() const { return csegment(); }
+	std::pair<const_segment_iterator, const_flat_iterator> extract() const { return cextract(); }
 };
 
 
@@ -663,13 +672,18 @@ struct const_segmented_coordinate
 
 	flat_iterator flat() { return _flat; }
 	segment_iterator segment() { return _seg; }
+	std::pair<segment_iterator, flat_iterator> extract() { return { seg(), flat() }; }
+
 	const_flat_iterator cflat() const { return const_flat_iterator(_flat); }
 	const_segment_iterator csegment() const { return const_segment_iterator(_seg); }
+	std::pair<const_segment_iterator, const_flat_iterator> cextract() const { return { cseg(), cflat() }; }
+
 	const_flat_iterator flat() const { return cflat(); }
 	const_segment_iterator segment() const { return csegment(); }
+	std::pair<const_segment_iterator, const_flat_iterator> extract() const { return cextract(); }
 };
 //************************************************************************
-// ~SEGMENT COORDIANTE
+// ~SEGMENTED COORDINATE
 //************************************************************************
 
 } // namespace seg

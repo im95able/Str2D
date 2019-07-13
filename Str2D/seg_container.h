@@ -1019,15 +1019,15 @@ template<typename C>
 // C models SegmentHeaderContainer
 inline
 void insert_headers(
-	C& index_container, Iterator<C>& used_first, Iterator<C>& used_last, Iterator<C>& insert, SizeType<C> n) {
+	C& index, Iterator<C>& used_first, Iterator<C>& used_last, Iterator<C>& insert, SizeType<C> n) {
 
 	using I = Iterator<C>;
 	SizeType<C> used_size = static_cast<SizeType<C>>(used_last - used_first);
-	if (std::size(index_container) - used_size >= n) {
+	if (std::size(index) - used_size >= n) {
 		IteratorDifferenceType<I> insert_at = insert - used_first;
 		std::tie(used_first, used_last) = insert_flat(
-			std::begin(index_container),
-			std::end(index_container),
+			std::begin(index),
+			std::end(index),
 			used_first,
 			used_last,
 			insert,
@@ -1042,7 +1042,7 @@ void insert_headers(
 		insert = flat::move_n(used_first, pre_size, new_used_first).second;
 		used_last = flat::move_n(used_first + pre_size, used_size - pre_size, flat::successor(insert, n)).second;
 		used_first = new_used_first;
-		index_container = std::move(new_index);
+		index = std::move(new_index);
 	}
 }
 
@@ -1052,10 +1052,10 @@ template<typename C, typename A>
 // ValueType<A> == AreaType<IteratorValueType<C>>
 inline
 void insert_headers_and_allocate_areas(
-	C& index_container, Iterator<C>& used_first, Iterator<C>& used_last, A& alloc, Iterator<C>& insert, SizeType<C> n) {
+	C& index, Iterator<C>& used_first, Iterator<C>& used_last, A& alloc, Iterator<C>& insert, SizeType<C> n) {
 
 	using SegmentHeader = IteratorValueType<Iterator<C>>;
-	insert_headers(index_container, used_first, used_last, insert, n);
+	insert_headers(index, used_first, used_last, insert, n);
 	Iterator<C> first = insert;
 	SizeType<C> _n = n;
 	try {
@@ -1113,8 +1113,8 @@ void erase_headers_and_deallocate_areas(
 template<typename C>
 // C models SegmentHeaderContainer
 inline
-std::pair<Iterator<C>, Iterator<C>> middle_edges(C& index_container) {
-	Iterator<C> edge_left = flat::successor(index_container.begin(), (index_container.size() >> 1) - 1);
+std::pair<Iterator<C>, Iterator<C>> middle_edges(C& index) {
+	Iterator<C> edge_left = flat::successor(index.begin(), (index.size() >> 1) - 1);
 	return { edge_left, flat::successor(edge_left, 1) };
 }
 
@@ -1510,9 +1510,9 @@ private:
 	}
 
 public:
-	vector_tmp(allocator&& alloc = allocator()) : in(std::move(alloc)) {}
+	vector_tmp(allocator&& alloc = allocator()) : in(std::move(alloc)), s(0) {}
 	vector_tmp(vector_tmp&& other) : in(std::move(other.in)), s(std::move(other.s)), cmp(std::move(other.cmp)) {}
-	vector_tmp(const allocator& alloc) : in(alloc) {}
+	vector_tmp(const allocator& alloc) : in(alloc), s(0) {}
 	vector_tmp(const vector_tmp& other) : in(other.in), s(other.s), cmp(other.cmp) { copy_from(other); }
 	~vector_tmp() { clear(); }
 

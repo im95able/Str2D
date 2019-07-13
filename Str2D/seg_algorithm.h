@@ -5,6 +5,7 @@
 #include <utility>
 #include <functional>
 #include <memory>
+#include <algorithm>
 
 #include "utility.h"
 #include "flat_algorithm.h"
@@ -15,15 +16,48 @@ namespace str2d
 namespace seg
 {
 
-// Returns segment iterator of the given segment coordiante
+// Returns segment iterator of the given segmented coordinate
 template<typename C>
 // C models SegmentedCoordinate
 SegmentIterator<C> segment(C& c) { return c.segment(); }
 
-// Returns flat iterator of the given segment coordiante
+template<typename C>
+// C models SegmentedCoordinate
+ConstSegmentIterator<C> segment(const C& c) { return c.csegment(); }
+
+template<typename C>
+// C models SegmentedCoordinate
+ConstSegmentIterator<C> csegment(const C& c) { return c.csegment(); }
+
+
+
+// Returns flat iterator of the given segmented coordinate
 template<typename C>
 // C models SegmentedCoordinate
 FlatIterator<C> flat(C& c) { return c.flat(); }
+
+template<typename C>
+// C models SegmentedCoordinate
+ConstFlatIterator<C> flat(const C& c) { return c.cflat(); }
+
+template<typename C>
+// C models SegmentedCoordinate
+ConstFlatIterator<C> cflat(const C& c) { return c.cflat(); }
+
+
+
+// Returns both the flat and segment iterator of the given segmented coordinate
+template<typename C>
+// C models SegmentedCoordinate
+std::pair<SegmentIterator<C>, FlatIterator<C>> extract(C& c) { c.extract(); }
+
+template<typename C>
+// C models SegmentedCoordinate
+std::pair<ConstSegmentIterator<C>, ConstFlatIterator<C>> extract(const C& c) { c.cextract(); }
+
+template<typename C>
+// C models SegmentedCoordinate
+std::pair<ConstSegmentIterator<C>, ConstFlatIterator<C>> cextract(const C& c) { c.cextract(); }
 
 template<typename I0, typename N, typename I1, typename C>
 // I0 models InputIterator

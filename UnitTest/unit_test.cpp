@@ -1654,7 +1654,12 @@ TEST_F(TestSegmentContainerUsage, Usage)
 
 } // namespace str2d
 
+
+#include <functional>
+
 int main(int argc, char** argv) {
+	std::boyer_moore_searcher<char*> b(*argv, *argv);
+
 	::testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();
 }

@@ -41,11 +41,6 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
-    <ProjectReference Include="..\Segmented-Map\Segmented-Map.vcxproj">
-      <Project>{8596f421-4f37-4de2-a066-3e52f9bc624e}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
