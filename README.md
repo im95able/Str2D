@@ -195,8 +195,8 @@ void set_insert_sorted_unguarded_example() {
    std::vector<int> v(100, *it);
    auto[first, last] = sset.insert_sorted_unguarded(it, v.begin(), 100);
    // inserts 100 new objects which are equal to "*it" at the "it" position(middle of the range in this case)
-   // or sset.insert_move_sorted_unguarded(it, v.begin(), 100);
-   // move constructs the range from the objects in the range [v.begin(), v.begin() + 100) 
+   // we could have also used sset.insert_move_sorted_unguarded(it, v.begin(), 100) which
+   // move constructs the new range from the objects in the range [v.begin(), v.begin() + 100) 
    
    if(last == sset.end() || *last != *first) {
       str2d::seg::for_each(first, last, increment());
