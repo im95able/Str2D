@@ -15,8 +15,8 @@
 
 #include "gtest/gtest.h"
 
-#include "..\Segmented-Map\seg_algorithm.h"
-#include "..\Segmented-Map\seg_container.h"
+#include "..\Str2d\seg_algorithm.h"
+#include "..\Str2d\seg_container.h"
 
 
 namespace str2d
@@ -84,7 +84,7 @@ const char* allocator_base::counter_names[number_ops] = {
 
 #ifdef POOL_ALLOCATOR_TEST
 
-#include "..\Segmented-Map\pool_allocator.h"
+#include "..\Str2D\pool_allocator.h"
 
 static constexpr std::size_t chunk_capacity = 100;
 
