@@ -262,7 +262,7 @@ Note : If anyone is willing(and unlike me, able) to the statistical calculations
 
 # Exception Safety
 I didn't know of a way to implement exception safety so that there's always basic exception guarantee, without losing efficiency.
-Basically if the type we're storing is POD(Plain Old Data), we everywhere have basic exception guarantee.
+Basically if the type we're storing is POD(Plain Old Data), all segmented vector operations have basic exception guarantee.
 
 ## Erasure
 If the object type we're storing has a move constructor or a copy constructor which don't throw, we have basic exception guarantee; otherwise no guarantee is given.
