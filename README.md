@@ -280,7 +280,8 @@ If the move constructor doesn't throw, we have basic exception guarantee, otherw
 # Benchmarks
 
 # Installation
-You'll need a c++17 compiler. Place all files inside Str2D directory of this repository, in a directory of your choosing project. Include str2d.h header file and you're ready to go.
+You'll need a c++17 compiler. 
+Place all files inside Str2D directory of this repository, into a directory of your choice. Include str2d.h header file and you're ready to go.
 
 # Conclusion
 In a sense, the segmented vector extends the application area of the "flat" vector so it can be used as a set or as a container where insertion order matters, for a large number of elements. As benchmarks show, that extension has limits which have to be taken into account. 
