@@ -3,6 +3,7 @@ Str2D is a library of 2D algorithms and data structures implemented in c++17 des
 
 While reading two books, `Elements of Programming`(which now you can read for [free](http://componentsprogramming.com/elements-of-programming-authors-edition/)) and `From mathematics to generic programming`, I stumbled upon a coordinate structure called the SegmentIterator and realised I could implement it together with data structures and algorithms needed for its use.  
 The second motivation was [this](https://www.google.com/url?sa=t&source=web&rct=j&url=https://people.freebsd.org/~lstewart/articles/cpumemory.pdf&ved=2ahUKEwirjajuv57jAhVrxKYKHbfvDV4QFjAAegQIAhAB&usg=AOvVaw3VY2lnCBaI-B57Dric65cb) paper, which explained to me the inadequacy of data structures which utilize numerous single node allocations(e.g. `std::set` and the like).
+The goal was to implement a `set`-like data structure which would allow the processor to utilize its prefetcher and, most of the time, not get a cache miss while iterating; but would at the same time have reasonable, lookup, insert and erase time.   
 
 At the heart of the library lies a data structure called `str2d::seg::vector`, the rest are build on top of it; hence this guide will mainly focus on it and somewhat on `str2d::seg::set`(`str2d::seg::map` is exluded beaceuse it's functionally almost indentical to `str2d::seg::set`). Once you've understood how the segmented vector is implemented you'll easily deduce how to use it to implement `set`-like and `map`-like data structures.
 
@@ -237,7 +238,7 @@ Stores only a pointer to a segment. Exactly next to the memory allocated for the
 ### Big Segment Header
 Stores both the pointer to a segment, and the two indices indicating begininng and ending. 
 
-Smaller header means smaller index. On the other hand, one extra cache miss which might occur, when we need to find the beginning or the ending of user data, mean that almost all operations are slower wth small than big segment header(this will be shown in Benchmarks section). By default the library uses big headers; if the need arises, another type which satisfies `SegmentHeader` concept can easily replace the default.
+Smaller header means smaller index. On the other hand, one extra cache miss which might occur, when we need to find the beginning or the ending of user data, means that almost all operations are slower with small than with big segment header(this will be shown in Benchmarks section). By default the library uses big headers; if the need arises, another type which satisfies `SegmentHeader` concept can easily replace the default.
 
 
 # Memory 
@@ -286,6 +287,6 @@ Place all files inside Str2D directory of this repository, into a directory of y
 # Conclusion
 In a sense, the segmented vector extends the application area of the "flat" vector so it can be used as a set or as a container where insertion order matters, for a large number of elements. As benchmarks show, that extension has limits which have to be taken into account. 
 
-Google's btree is probably a safe bet as a drop in replacement for the `std::map` and `std::map` data structures. If on the other hand iterations dominate other operations, or you're constantly erasing and inserting entire ranges and not single elements, you could consider using the segmented vector.
+Google's btree is probably a safe bet as a drop in replacement for the `std::map` and `std::map` data structures. If on the other hand iterations dominate other operations, or you're constantly erasing and inserting more than one element, you could consider using the segmented vector.
 
 Needless to say, these opinions mean little in comparison to actual benchmarks of your code.
