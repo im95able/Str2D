@@ -18,13 +18,13 @@ Objects stored in `str2d::seg::multiset` and `str2d::seg::multimap` are all muta
 
 ## Coordinate Structures/Iterators
 Segmented vector utilizes 3 kinds of coordinate structures : 
-1) Segment iterator - random access iterator that iterates over a range of segments. It can't be dereferenced like ordinary
+1) SegmentIterator - random access iterator that iterates over a range of segments. It can't be dereferenced like ordinary
 random access iterators; data inside it is accessed like it's accessed in a sequence container(e.g. `std::vector`), i.e. by
 using `begin` and `end` methods of the segment iterator. Return type of those methods is a flat iterator.
    
-2) Flat iterator - regular random access iterator; when dereferenced, returns the value type stored in the segmented vector.
+2) FlatIterator - regular random access iterator; when dereferenced, returns the value type stored in the segmented vector.
 
-3) Segmented coordinate - regular bidirectinal iterator; when dereferenced, returns the value type stored in the segmented vector.
+3) SegmentedCoordinate - regular bidirectinal iterator; when dereferenced, returns the value type stored in the segmented vector.
 This type is returned when `begin` and `end` functions of the segmented vector are called. Inside, it holds a segment iterator and a flat iterator pointing somewhere inside that segment. It bassically works like the iterator of `std::deque`, except it's not random access. Its segment iterator is accessed through `segment` method, while its flat iterator is accessed via `flat` method of the coordinate.
 
 The algorithms in the library are aware of these coordinate structures, and use them in nesteed loops to decrease the number of checks needed in each iterations. If only segmented coordinate(regular bidirectional iterator) were used, each iteration of an algorithm would have to check whether it's reached the end of the segment and the end of the entire range. By using nested loops, only check for the end of the entire range is needed in each iteration. There is alse the check to see whether we have reached the last segment; it happens once for each segment in the range.
