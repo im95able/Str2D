@@ -6,7 +6,7 @@ The second motivation was [this](https://www.google.com/url?sa=t&source=web&rct=
 
 The goal was to implement a `set`-like data structure which would allow the processor to utilize its prefetcher and, most of the time, not get a cache miss while iterating; but would at the same time have reasonable, lookup, insert and erase time.   
 
-At the heart of the library lies a data structure called `str2d::seg::vector`, the rest are build on top of it; hence this guide will mainly focus on it and somewhat on `str2d::seg::set`(`str2d::seg::map` is exluded beaceuse it's functionally almost indentical to `str2d::seg::set`). Once you've understood how the segmented vector is implemented you'll easily deduce how to use it to implement `set`-like and `map`-like data structures.
+At the heart of the library lies a data structure called `str2d::seg::vector`, the rest are build on top of it; hence this guide will mainly focus on it and somewhat on `str2d::seg::set`(`str2d::seg::map` is exluded beacuse it's functionally almost indentical to `str2d::seg::set`). Once you've understood how the segmented vector is implemented you'll easily deduce how to use it to implement `set`-like and `map`-like data structures.
 
 Note : There are currently only `str2d::seg::multiset` and `str2d::seg::multimap` data structures in this library apart from the `str2d::seg::vector`. The reason for exlusion of `str2d::seg::set` and `str2d::seg::map` is the lack of time; they will probably be included some time later.
 
