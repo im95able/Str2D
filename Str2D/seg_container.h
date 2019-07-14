@@ -1655,12 +1655,12 @@ public:
 };
 
 
-constexpr segment_size_t default_segment_capacity = 2048u;
+constexpr segment_size_t default_segment_byte_capacity = 65536u;
 
 template<typename T>
 constexpr segment_size_t default_capacity_for_type() {
 	constexpr segment_size_t size = sizeof(T);
-	constexpr segment_size_t capacity = default_segment_capacity / size;
+	constexpr segment_size_t capacity = default_segment_byte_capacity / size;
 	return capacity > 2 ? capacity : 2;
 }
 
