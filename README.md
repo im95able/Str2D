@@ -257,7 +257,7 @@ float memory_overhead(const seg_vec_t& svec) {
    return (index_bytes + unused_segment_bytes) / used_segment_bytes;
 }
 ```
-If we're storing small objects, for example up to 16 bytes or less, we'll almost certainly save up some memory in comparison to `std::set`, but not in comparison to google's `btree`. 
+If we're storing small objects, for example up to 16 bytes or less, we'll almost certainly save up some memory in comparison to `std::set`, but not in comparison to google's `btree::btree_set`. 
 
 Note : If anyone is willing(and unlike me, able) to the statistical calculations to show the exact memory utilization in comparison to other data structures and/or do tests which show how much memory is being used, please do so, and send me the results. 
 
