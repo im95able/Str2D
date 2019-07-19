@@ -160,8 +160,6 @@ void binary_lookup_example() {
       // element has been found
       // increment in by 1
    }
-   // or just use lower_bound method of the set
-   it = sset.lower_bound(r);
 }
 ```
 
