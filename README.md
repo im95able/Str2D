@@ -127,7 +127,7 @@ void iterate_by_hand_example() {
 ```
 As said, it's cumbersome writing neested loops, so we just use already existing algorithms.
 ```cpp
-void iterator_example() {
+void iterate_example() {
    seg_vec_t svec = init_vec();
    str2d::seg::for_each(svec.begin(), svec.end(), increment());
 }
