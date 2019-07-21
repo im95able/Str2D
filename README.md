@@ -20,6 +20,7 @@ Objects stored in `str2d::seg::multiset` and `str2d::seg::multimap` are all muta
 
 ## Coordinate Structures/Iterators
 Formal definitions of concepts used in this library can be found [here](https://www.dropbox.com/s/adr573t4b9ev9dl/11nBMv.pdf?dl=0).
+
 Segmented vector utilizes 3 kinds of coordinate structures : 
 1) SegmentIterator - random access iterator that iterates over a range of segments. It can't be dereferenced like ordinary
 random access iterators; data inside it is accessed like it's accessed in a sequence container(e.g. `std::vector`), i.e. by
