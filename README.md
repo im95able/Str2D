@@ -276,6 +276,8 @@ By copy insertion we mean calling `insert` with an rvalue reference or `insert_m
 If the move constructor doesn't throw, we have basic exception guarantee, otherwise no guarantee.
 
 # Benchmarks
+This section will be added shortly in the future. It will give detailed explainations of the results found in BenchmarkResults.txt
+file. Small summary is given bellow. 
 
 # Installation
 You'll need a c++17 compiler. 
