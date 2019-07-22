@@ -1,10 +1,12 @@
 # Motivation
 Str2D is a library of 2D algorithms and data structures implemented in c++17 designed for manipulating large amounts of data. 
 
-While reading two books, `Elements of Programming`(which now you can read for [free](http://componentsprogramming.com/elements-of-programming-authors-edition/)) and `From mathematics to generic programming`, I stumbled upon a coordinate structure called the segmented iterator and realised I could implement it together with data structures and algorithms needed for its use.  
+While reading two books, `Elements of Programming`(which now you can read for [free](http://componentsprogramming.com/elements-of-programming-authors-edition/)) and `From mathematics to generic programming`, I stumbled upon a coordinate structure called the SegmentIterator and realised I could implement it together with data structures and algorithms needed for its use.  
 The second motivation was [this](https://www.google.com/url?sa=t&source=web&rct=j&url=https://people.freebsd.org/~lstewart/articles/cpumemory.pdf&ved=2ahUKEwirjajuv57jAhVrxKYKHbfvDV4QFjAAegQIAhAB&usg=AOvVaw3VY2lnCBaI-B57Dric65cb) paper, which explained to me the inadequacy of data structures which utilize numerous single node allocations(e.g. `std::set` and the like).
 
-At the heart of the library lies a data structure called `str2d::seg::vector`, the rest are build on top of it; hence this guide will mainly focus on it and somewhat on `str2d::seg::set`(`str2d::seg::map` is exluded beaceuse it's functionally almost indentical to `str2d::seg::set`). Once you've understood how the segmented vector is implemented you'll easily deduce how to use it to implement `set`-like and `map`-like data structures.
+The goal was to implement a `set`-like data structure which would allow the processor to utilize its prefetcher and, most of the time, not get a cache miss while iterating; but would at the same time have reasonable, lookup, insert and erase time.   
+
+At the heart of the library lies a data structure called `str2d::seg::vector`, the rest are build on top of it; hence this guide will mainly focus on it and somewhat on `str2d::seg::set`(`str2d::seg::map` is exluded beacuse it's functionally almost indentical to `str2d::seg::set`). Once you've understood how the segmented vector is implemented you'll easily deduce how to use it to implement `set`-like and `map`-like data structures.
 
 Note : There are currently only `str2d::seg::multiset` and `str2d::seg::multimap` data structures in this library apart from the `str2d::seg::vector`. The reason for exlusion of `str2d::seg::set` and `str2d::seg::map` is the lack of time; they will probably be included some time later.
 
@@ -17,14 +19,16 @@ Each segment holds at least half the capacity(`limit`) elements on it, except th
 Objects stored in `str2d::seg::multiset` and `str2d::seg::multimap` are all mutable. For `str2d::seg::multiset`, I could have made the objects constant while the user is manipulating them and mutable when they're used internally; I couldn't do the same for `str2d::seg::multimap`, so I decided to leave them mutable for both data structures. The user will have to take care not to mess up the invariants. On the other hand, this will prove useful when we want to bypass some unnecessary checks.
 
 ## Coordinate Structures/Iterators
+Formal definitions of concepts used in this library can be found [here](https://www.dropbox.com/s/hc042pm8kkhgj70/11nBMv.pdf?dl=0).
+
 Segmented vector utilizes 3 kinds of coordinate structures : 
-1) Segment iterator - random access iterator that iterates over a range of segments. It can't be dereferenced like ordinary
+1) SegmentIterator - random access iterator that iterates over a range of segments. It can't be dereferenced like ordinary
 random access iterators; data inside it is accessed like it's accessed in a sequence container(e.g. `std::vector`), i.e. by
 using `begin` and `end` methods of the segment iterator. Return type of those methods is a flat iterator.
    
-2) Flat iterator - regular random access iterator; when dereferenced, returns the value type stored in the segmented vector.
+2) FlatIterator - regular random access iterator; when dereferenced, returns the value type stored in the segmented vector.
 
-3) Segmented coordinate - regular bidirectinal iterator; when dereferenced, returns the value type stored in the segmented vector.
+3) SegmentedCoordinate - regular bidirectinal iterator; when dereferenced, returns the value type stored in the segmented vector.
 This type is returned when `begin` and `end` functions of the segmented vector are called. Inside, it holds a segment iterator and a flat iterator pointing somewhere inside that segment. It bassically works like the iterator of `std::deque`, except it's not random access. Its segment iterator is accessed through `segment` method, while its flat iterator is accessed via `flat` method of the coordinate.
 
 The algorithms in the library are aware of these coordinate structures, and use them in nesteed loops to decrease the number of checks needed in each iterations. If only segmented coordinate(regular bidirectional iterator) were used, each iteration of an algorithm would have to check whether it's reached the end of the segment and the end of the entire range. By using nested loops, only check for the end of the entire range is needed in each iteration. There is alse the check to see whether we have reached the last segment; it happens once for each segment in the range.
@@ -125,7 +129,7 @@ void iterate_by_hand_example() {
 ```
 As said, it's cumbersome writing neested loops, so we just use already existing algorithms.
 ```cpp
-void iterator_example() {
+void iterate_example() {
    seg_vec_t svec = init_vec();
    str2d::seg::for_each(svec.begin(), svec.end(), increment());
 }
@@ -158,8 +162,6 @@ void binary_lookup_example() {
       // element has been found
       // increment in by 1
    }
-   // or just use lower_bound method of the set
-   it = sset.lower_bound(r);
 }
 ```
 
@@ -237,7 +239,7 @@ Stores only a pointer to a segment. Exactly next to the memory allocated for the
 ### Big Segment Header
 Stores both the pointer to a segment, and the two indices indicating begininng and ending. 
 
-Smaller header means smaller index. On the other hand, one extra cache miss which might occur, when we need to find the beginning or the ending of user data, mean that almost all operations are slower wth small than big segment header(this will be shown in Benchmarks section). By default the library uses big headers; if the need arises, another type which satisfies `SegmentHeader` concept can easily replace the default.
+Smaller header means smaller index. On the other hand, one extra cache miss which might occur, when we need to find the beginning or the ending of user data, means that almost all operations are slower with small than with big segment header(this will be shown in Benchmarks section). By default the library uses big headers; if the need arises, another type which satisfies `SegmentHeader` concept can easily replace the default.
 
 
 # Memory 
@@ -255,14 +257,14 @@ float memory_overhead(const seg_vec_t& svec) {
    return (index_bytes + unused_segment_bytes) / used_segment_bytes;
 }
 ```
-If we're storing small objects, for example up to 16 bytes or less, we'll almost certainly save up some memory in comparison to `std::set`, but not in comparison to google's `btree`. 
+If we're storing small objects, for example up to 16 bytes or less, we'll almost certainly save up some memory in comparison to `std::set`, but not in comparison to google's `btree::btree_set`. 
 
 Note : If anyone is willing(and unlike me, able) to the statistical calculations to show the exact memory utilization in comparison to other data structures and/or do tests which show how much memory is being used, please do so, and send me the results. 
 
 
 # Exception Safety
 I didn't know of a way to implement exception safety so that there's always basic exception guarantee, without losing efficiency.
-Basically if the type we're storing is POD(Plain Old Data), we everywhere have basic exception guarantee.
+Basically if the type we're storing is POD(Plain Old Data), all segmented vector operations have basic exception guarantee.
 
 ## Erasure
 If the object type we're storing has a move constructor or a copy constructor which don't throw, we have basic exception guarantee; otherwise no guarantee is given.
@@ -275,16 +277,19 @@ If both the copy and the move constructor don't throw, we have basic exception g
 By copy insertion we mean calling `insert` with an rvalue reference or `insert_move_sorted_unguarded` or `insert_move_sorted`.
 If the move constructor doesn't throw, we have basic exception guarantee, otherwise no guarantee.
 
-# UnitTests
-
 # Benchmarks
+This section will be added shortly in the future. It will give detailed explainations of the results found in BenchmarkResults.txt
+file. Small summary is given bellow. 
 
 # Installation
-You'll need a c++17 compiler. Place all files inside Str2D directory of this repository, in a directory of your choosing project. Include str2d.h header file and you're ready to go.
+You'll need a c++17 compiler. 
+Place all files inside Str2D directory of this repository, into a directory of your choice. Include str2d.h header file and you're ready to go.
 
 # Conclusion
 In a sense, the segmented vector extends the application area of the "flat" vector so it can be used as a set or as a container where insertion order matters, for a large number of elements. As benchmarks show, that extension has limits which have to be taken into account. 
 
-Google's btree is probably a safe bet as a drop in replacement for the `std::map` and `std::map` data structures. If on the other hand iterations dominate other operations, or you're constantly erasing and inserting entire ranges and not single elements, you could consider using the segmented vector.
+Google's btree is probably a safe bet as a drop in replacement for the `std::map` and `std::map` data structures. If on the other hand iterations dominate other operations, or you're constantly erasing and inserting more than one element, you could consider using the segmented vector.
 
 Needless to say, these opinions mean little in comparison to actual benchmarks of your code.
+
+This library is begging to be expanded with more data structures, algorithms and different implementations of all concepts inside of it, just as this Readme could be expanded with more tests and deeper explainantions(time didn't allow me to add everything I wanted in both the library and this document; hopefully in the future I'll find some time). If you want to do any of that, feel free to do it.

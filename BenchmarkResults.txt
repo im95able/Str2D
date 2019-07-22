@@ -1,0 +1,434 @@
+Run on (4 X 3093 MHz CPU s)
+CPU Caches:
+  L1 Data 32K (x4)
+  L1 Instruction 32K (x4)
+  L2 Unified 262K (x4)
+  L3 Unified 6291K (x1)
+--------------------------------------------------------------------------------------------------------------
+Benchmark                                                                    Time             CPU   Iterations
+--------------------------------------------------------------------------------------------------------------
+Run on (4 X 3093 MHz CPU s)
+CPU Caches:
+  L1 Data 32K (x4)
+  L1 Instruction 32K (x4)
+  L2 Unified 262K (x4)
+  L3 Unified 6291K (x1)
+--------------------------------------------------------------------------------------------------------------
+Benchmark                                                                    Time             CPU   Iterations
+--------------------------------------------------------------------------------------------------------------
+SMALL  - using a small segment header
+
+BIG    - using a big segment header
+
+INT64  - type we're storing
+
+C...   - capacity of each segment(measured in number of elements, not the number of bytes)
+
+Numbers 65536 and 134217728 after the C...
+       - number of elements inside the container when the test was conducted
+
+LINEAR - once a binary search has located a segmentd on which the element we're looking for resides, 
+         do a LINEAR search for that segment.
+
+BINARY - once a binary search has located a segmentd on which the element we're looking for resides, 
+         do a BINARY search of that segment.
+
+
+//***********************************************************************************************************
+// Inserting a single element
+//***********************************************************************************************************
+Fixture/SetInsertSingle_INT64/65536                                        539 ns          558 ns      1120000
+Fixture/SetInsertSingle_INT64/134217728                                   2109 ns         2302 ns       448000
+Fixture/BtreeSetInsertSingle_INT64_C32/65536                               409 ns          385 ns      1866667
+Fixture/BtreeSetInsertSingle_INT64_C32/134217728                          1589 ns         1496 ns       407273
+Fixture/SegmentedSetInsertSingle_SMALL_LINEAR_INT64_C1024/65536            408 ns          368 ns      1866667
+Fixture/SegmentedSetInsertSingle_SMALL_LINEAR_INT64_C1024/134217728      11300 ns        11614 ns        49778
+Fixture/SegmentedSetInsertSingle_SMALL_LINEAR_INT64_C2048/65536            412 ns          384 ns      2357895
+Fixture/SegmentedSetInsertSingle_SMALL_LINEAR_INT64_C2048/134217728       6334 ns         6166 ns        83627
+Fixture/SegmentedSetInsertSingle_SMALL_LINEAR_INT64_C4096/65536            410 ns          336 ns      1723077
+Fixture/SegmentedSetInsertSingle_SMALL_LINEAR_INT64_C4096/134217728       8716 ns         7773 ns        64328
+Fixture/SegmentedSetInsertSingle_SMALL_LINEAR_INT64_C8192/65536            408 ns          353 ns      1947826
+Fixture/SegmentedSetInsertSingle_SMALL_LINEAR_INT64_C8192/134217728      10708 ns        11117 ns        49192
+Fixture/SegmentedSetInsertSingle_SMALL_BINARY_INT64_C1024/65536            407 ns          386 ns      1618581
+Fixture/SegmentedSetInsertSingle_SMALL_BINARY_INT64_C1024/134217728      11136 ns        10986 ns        49778
+Fixture/SegmentedSetInsertSingle_SMALL_BINARY_INT64_C2048/65536            426 ns          452 ns      1659259
+Fixture/SegmentedSetInsertSingle_SMALL_BINARY_INT64_C2048/134217728       5242 ns         5157 ns       109078
+Fixture/SegmentedSetInsertSingle_SMALL_BINARY_INT64_C4096/65536            420 ns          531 ns      1000000
+Fixture/SegmentedSetInsertSingle_SMALL_BINARY_INT64_C4096/134217728       7465 ns         8520 ns        69688
+Fixture/SegmentedSetInsertSingle_SMALL_BINARY_INT64_C8192/65536            419 ns          397 ns      1929846
+Fixture/SegmentedSetInsertSingle_SMALL_BINARY_INT64_C8192/134217728       7641 ns         8221 ns        60820
+Fixture/SegmentedSetInsertSingle_BIG_LINEAR_INT64_C1024/65536              399 ns          375 ns      1792000
+Fixture/SegmentedSetInsertSingle_BIG_LINEAR_INT64_C1024/134217728        20702 ns        21205 ns        28000
+Fixture/SegmentedSetInsertSingle_BIG_LINEAR_INT64_C2048/65536              402 ns          407 ns      2036364
+Fixture/SegmentedSetInsertSingle_BIG_LINEAR_INT64_C2048/134217728         9184 ns         8420 ns        59381
+Fixture/SegmentedSetInsertSingle_BIG_LINEAR_INT64_C4096/65536              400 ns          453 ns      2036364
+Fixture/SegmentedSetInsertSingle_BIG_LINEAR_INT64_C4096/134217728         8638 ns         9526 ns        62330
+Fixture/SegmentedSetInsertSingle_BIG_LINEAR_INT64_C8192/65536              407 ns          449 ns      1600000
+Fixture/SegmentedSetInsertSingle_BIG_LINEAR_INT64_C8192/134217728         7161 ns         7347 ns        70177
+Fixture/SegmentedSetInsertSingle_BIG_BINARY_INT64_C1024/65536              401 ns          424 ns      1659259
+Fixture/SegmentedSetInsertSingle_BIG_BINARY_INT64_C1024/134217728        20192 ns        20926 ns        29867
+Fixture/SegmentedSetInsertSingle_BIG_BINARY_INT64_C2048/65536              400 ns          414 ns      1659259
+Fixture/SegmentedSetInsertSingle_BIG_BINARY_INT64_C2048/134217728         8718 ns         8735 ns        60819
+Fixture/SegmentedSetInsertSingle_BIG_BINARY_INT64_C4096/65536              400 ns          531 ns      1000000
+Fixture/SegmentedSetInsertSingle_BIG_BINARY_INT64_C4096/134217728         6305 ns         5644 ns        88587
+Fixture/SegmentedSetInsertSingle_BIG_BINARY_INT64_C8192/65536              397 ns          358 ns      2007040
+Fixture/SegmentedSetInsertSingle_BIG_BINARY_INT64_C8192/134217728         5298 ns         5630 ns       111008
+//***********************************************************************************************************
+//***********************************************************************************************************
+
+
+//***********************************************************************************************************
+// Iterating over all elements of the container
+//***********************************************************************************************************
+Fixture/SetIterate_INT64/65536                                          511660 ns       515625 ns         1000
+Fixture/SetIterate_INT64/134217728                                  2460531300 ns   2437500000 ns            1
+Fixture/BtreeSetIterate_INT64_C32/65536                                 194231 ns       194972 ns         3446
+Fixture/BtreeSetIterate_INT64_C32/134217728                          493197550 ns    476562500 ns            2
+Fixture/SegmentedSetIterate_SMALL_LINEAR_INT64_C1024/65536               27113 ns        26786 ns        28000
+Fixture/SegmentedSetIterate_SMALL_LINEAR_INT64_C1024/134217728        87741286 ns     89285714 ns            7
+Fixture/SegmentedSetIterate_SMALL_LINEAR_INT64_C2048/65536               25800 ns        25495 ns        26353
+Fixture/SegmentedSetIterate_SMALL_LINEAR_INT64_C2048/134217728        77290811 ns     76388889 ns            9
+Fixture/SegmentedSetIterate_SMALL_LINEAR_INT64_C4096/65536               25478 ns        25112 ns        28000
+Fixture/SegmentedSetIterate_SMALL_LINEAR_INT64_C4096/134217728        79057111 ns     74652778 ns            9
+Fixture/SegmentedSetIterate_SMALL_LINEAR_INT64_C8192/65536               26102 ns        26228 ns        28000
+Fixture/SegmentedSetIterate_SMALL_LINEAR_INT64_C8192/134217728        77393500 ns     78125000 ns            9
+Fixture/SegmentedSetIterate_SMALL_BINARY_INT64_C1024/65536               26075 ns        26088 ns        26353
+Fixture/SegmentedSetIterate_SMALL_BINARY_INT64_C1024/134217728        88163000 ns     87053571 ns            7
+Fixture/SegmentedSetIterate_SMALL_BINARY_INT64_C2048/65536               25647 ns        25670 ns        28000
+Fixture/SegmentedSetIterate_SMALL_BINARY_INT64_C2048/134217728        76827889 ns     76388889 ns            9
+Fixture/SegmentedSetIterate_SMALL_BINARY_INT64_C4096/65536               25373 ns        24902 ns        26353
+Fixture/SegmentedSetIterate_SMALL_BINARY_INT64_C4096/134217728        77173129 ns     78125000 ns            7
+Fixture/SegmentedSetIterate_SMALL_BINARY_INT64_C8192/65536               25883 ns        24902 ns        26353
+Fixture/SegmentedSetIterate_SMALL_BINARY_INT64_C8192/134217728        77113082 ns     75284091 ns           11
+Fixture/SegmentedSetIterate_BIG_LINEAR_INT64_C1024/65536                 29231 ns        26681 ns        26353
+Fixture/SegmentedSetIterate_BIG_LINEAR_INT64_C1024/134217728          98940614 ns     93750000 ns            7
+Fixture/SegmentedSetIterate_BIG_LINEAR_INT64_C2048/65536                 29315 ns        27623 ns        24889
+Fixture/SegmentedSetIterate_BIG_LINEAR_INT64_C2048/134217728          90314200 ns     87053571 ns            7
+Fixture/SegmentedSetIterate_BIG_LINEAR_INT64_C4096/65536                 29694 ns        28460 ns        28000
+Fixture/SegmentedSetIterate_BIG_LINEAR_INT64_C4096/134217728          91251944 ns     86805556 ns            9
+Fixture/SegmentedSetIterate_BIG_LINEAR_INT64_C8192/65536                 27391 ns        26995 ns        24889
+Fixture/SegmentedSetIterate_BIG_LINEAR_INT64_C8192/134217728          82895411 ns     79861111 ns            9
+Fixture/SegmentedSetIterate_BIG_BINARY_INT64_C1024/65536                 27742 ns        27623 ns        24889
+Fixture/SegmentedSetIterate_BIG_BINARY_INT64_C1024/134217728          92211814 ns     87053571 ns            7
+Fixture/SegmentedSetIterate_BIG_BINARY_INT64_C2048/65536                 27711 ns        27274 ns        26353
+Fixture/SegmentedSetIterate_BIG_BINARY_INT64_C2048/134217728          83273911 ns     79861111 ns            9
+Fixture/SegmentedSetIterate_BIG_BINARY_INT64_C4096/65536                 28250 ns        28250 ns        24889
+Fixture/SegmentedSetIterate_BIG_BINARY_INT64_C4096/134217728          84433189 ns     85069444 ns            9
+Fixture/SegmentedSetIterate_BIG_BINARY_INT64_C8192/65536                 28566 ns        27169 ns        23579
+Fixture/SegmentedSetIterate_BIG_BINARY_INT64_C8192/134217728          92240811 ns     90277778 ns            9
+//***********************************************************************************************************
+//***********************************************************************************************************
+
+
+//***********************************************************************************************************
+// Searchung for a single element
+//***********************************************************************************************************
+Fixture/SetLookup_INT64/65536                                             74.0 ns         75.0 ns      8960000
+Fixture/SetLookup_INT64/134217728                                         1934 ns         1967 ns       373333
+Fixture/BtreeSetLookup_INT64_C32/65536                                    27.7 ns         26.2 ns     28000000
+Fixture/BtreeSetLookup_INT64_C32/134217728                                 559 ns          531 ns      1000000
+Fixture/SegmentedSetLookup_SMALL_LINEAR_INT64_C1024/65536                 14.2 ns         13.8 ns     49777778
+Fixture/SegmentedSetLookup_SMALL_LINEAR_INT64_C1024/134217728             1952 ns         1800 ns       373333
+Fixture/SegmentedSetLookup_SMALL_LINEAR_INT64_C2048/65536                 13.6 ns         13.5 ns     49777778
+Fixture/SegmentedSetLookup_SMALL_LINEAR_INT64_C2048/134217728             2234 ns         2246 ns       320000
+Fixture/SegmentedSetLookup_SMALL_LINEAR_INT64_C4096/65536                 11.1 ns         9.84 ns     74666667
+Fixture/SegmentedSetLookup_SMALL_LINEAR_INT64_C4096/134217728             3011 ns         2916 ns       235789
+Fixture/SegmentedSetLookup_SMALL_LINEAR_INT64_C8192/65536                 10.4 ns         10.3 ns     74666667
+Fixture/SegmentedSetLookup_SMALL_LINEAR_INT64_C8192/134217728             4708 ns         4590 ns       160000
+Fixture/SegmentedSetLookup_SMALL_BINARY_INT64_C1024/65536                 14.6 ns         14.2 ns     56000000
+Fixture/SegmentedSetLookup_SMALL_BINARY_INT64_C1024/134217728             1620 ns         1500 ns       448000
+Fixture/SegmentedSetLookup_SMALL_BINARY_INT64_C2048/65536                 13.8 ns         13.8 ns     49777778
+Fixture/SegmentedSetLookup_SMALL_BINARY_INT64_C2048/134217728             1567 ns         1444 ns       497778
+Fixture/SegmentedSetLookup_SMALL_BINARY_INT64_C4096/65536                 11.3 ns         11.0 ns     64000000
+Fixture/SegmentedSetLookup_SMALL_BINARY_INT64_C4096/134217728             1467 ns         1413 ns       497778
+Fixture/SegmentedSetLookup_SMALL_BINARY_INT64_C8192/65536                 10.1 ns         10.0 ns     74666667
+Fixture/SegmentedSetLookup_SMALL_BINARY_INT64_C8192/134217728             1653 ns         1381 ns       497778
+Fixture/SegmentedSetLookup_BIG_LINEAR_INT64_C1024/65536                   16.1 ns         15.3 ns     56000000
+Fixture/SegmentedSetLookup_BIG_LINEAR_INT64_C1024/134217728               1763 ns         1500 ns       448000
+Fixture/SegmentedSetLookup_BIG_LINEAR_INT64_C2048/65536                   14.7 ns         13.2 ns     49777778
+Fixture/SegmentedSetLookup_BIG_LINEAR_INT64_C2048/134217728               1993 ns         1842 ns       373333
+Fixture/SegmentedSetLookup_BIG_LINEAR_INT64_C4096/65536                   12.3 ns         11.2 ns     56000000
+Fixture/SegmentedSetLookup_BIG_LINEAR_INT64_C4096/134217728               2740 ns         2567 ns       280000
+Fixture/SegmentedSetLookup_BIG_LINEAR_INT64_C8192/65536                   10.1 ns         9.77 ns     64000000
+Fixture/SegmentedSetLookup_BIG_LINEAR_INT64_C8192/134217728               4032 ns         4081 ns       172308
+Fixture/SegmentedSetLookup_BIG_BINARY_INT64_C1024/65536                   16.4 ns         16.3 ns     49777778
+Fixture/SegmentedSetLookup_BIG_BINARY_INT64_C1024/134217728               1164 ns         1147 ns       640000
+Fixture/SegmentedSetLookup_BIG_BINARY_INT64_C2048/65536                   13.8 ns         13.7 ns     64000000
+Fixture/SegmentedSetLookup_BIG_BINARY_INT64_C2048/134217728               1191 ns         1147 ns       640000
+Fixture/SegmentedSetLookup_BIG_BINARY_INT64_C4096/65536                   13.0 ns         11.4 ns     56000000
+Fixture/SegmentedSetLookup_BIG_BINARY_INT64_C4096/134217728               1070 ns         1025 ns       640000
+Fixture/SegmentedSetLookup_BIG_BINARY_INT64_C8192/65536                   9.80 ns         9.63 ns     74666667
+Fixture/SegmentedSetLookup_BIG_BINARY_INT64_C8192/134217728               1046 ns         1025 ns       640000
+//***********************************************************************************************************
+//***********************************************************************************************************
+
+//***********************************************************************************************************
+// Erasing a single element
+//***********************************************************************************************************
+Fixture/SetEraseSingle_INT64/65536                                         842 ns          820 ns       896000
+Fixture/SetEraseSingle_INT64/134217728                                    1423 ns         1381 ns       373333
+Fixture/BtreeSetEraseSingle_INT64_C32/65536                                797 ns          903 ns       640000
+Fixture/BtreeSetEraseSingle_INT64_C32/134217728                            801 ns          785 ns       896000
+Fixture/SegmentedSetEraseSingle_SMALL_LINEAR_INT64_C1024/65536             828 ns          883 ns      1079054
+Fixture/SegmentedSetEraseSingle_SMALL_LINEAR_INT64_C1024/134217728         990 ns         1025 ns       746667
+Fixture/SegmentedSetEraseSingle_SMALL_LINEAR_INT64_C2048/65536             908 ns          785 ns       896000
+Fixture/SegmentedSetEraseSingle_SMALL_LINEAR_INT64_C2048/134217728         997 ns          802 ns       896000
+Fixture/SegmentedSetEraseSingle_SMALL_LINEAR_INT64_C4096/65536             993 ns          959 ns       896000
+Fixture/SegmentedSetEraseSingle_SMALL_LINEAR_INT64_C4096/134217728        1158 ns         1094 ns      1000000
+Fixture/SegmentedSetEraseSingle_SMALL_LINEAR_INT64_C8192/65536            1026 ns          959 ns       896000
+Fixture/SegmentedSetEraseSingle_SMALL_LINEAR_INT64_C8192/134217728        1497 ns         1395 ns       448000
+Fixture/SegmentedSetEraseSingle_SMALL_BINARY_INT64_C1024/65536             857 ns          753 ns       746667
+Fixture/SegmentedSetEraseSingle_SMALL_BINARY_INT64_C1024/134217728        1027 ns         1098 ns       669013
+Fixture/SegmentedSetEraseSingle_SMALL_BINARY_INT64_C2048/65536             916 ns         1078 ns      1000000
+Fixture/SegmentedSetEraseSingle_SMALL_BINARY_INT64_C2048/134217728        1172 ns         1238 ns       896000
+Fixture/SegmentedSetEraseSingle_SMALL_BINARY_INT64_C4096/65536             930 ns          942 ns       746667
+Fixture/SegmentedSetEraseSingle_SMALL_BINARY_INT64_C4096/134217728        1446 ns         1066 ns       571806
+Fixture/SegmentedSetEraseSingle_SMALL_BINARY_INT64_C8192/65536             902 ns          774 ns       746667
+Fixture/SegmentedSetEraseSingle_SMALL_BINARY_INT64_C8192/134217728        2038 ns         1918 ns       407273
+Fixture/SegmentedSetEraseSingle_BIG_LINEAR_INT64_C1024/65536               837 ns         1064 ns       896000
+Fixture/SegmentedSetEraseSingle_BIG_LINEAR_INT64_C1024/134217728           976 ns          880 ns       692083
+Fixture/SegmentedSetEraseSingle_BIG_LINEAR_INT64_C2048/65536               925 ns          906 ns      1000000
+Fixture/SegmentedSetEraseSingle_BIG_LINEAR_INT64_C2048/134217728           992 ns         1074 ns       640000
+Fixture/SegmentedSetEraseSingle_BIG_LINEAR_INT64_C4096/65536               987 ns          774 ns       746667
+Fixture/SegmentedSetEraseSingle_BIG_LINEAR_INT64_C4096/134217728          1187 ns         1311 ns       560000
+Fixture/SegmentedSetEraseSingle_BIG_LINEAR_INT64_C8192/65536              1045 ns         1067 ns       746667
+Fixture/SegmentedSetEraseSingle_BIG_LINEAR_INT64_C8192/134217728          2096 ns         1318 ns       640000
+Fixture/SegmentedSetEraseSingle_BIG_BINARY_INT64_C1024/65536               835 ns          903 ns       640000
+Fixture/SegmentedSetEraseSingle_BIG_BINARY_INT64_C1024/134217728          1069 ns         1046 ns      1120000
+Fixture/SegmentedSetEraseSingle_BIG_BINARY_INT64_C2048/65536               892 ns          785 ns       896000
+Fixture/SegmentedSetEraseSingle_BIG_BINARY_INT64_C2048/134217728          1127 ns         1256 ns       497778
+Fixture/SegmentedSetEraseSingle_BIG_BINARY_INT64_C4096/65536               910 ns          928 ns       640000
+Fixture/SegmentedSetEraseSingle_BIG_BINARY_INT64_C4096/134217728          1460 ns         1535 ns       448000
+Fixture/SegmentedSetEraseSingle_BIG_BINARY_INT64_C8192/65536               970 ns         1016 ns       892018
+Fixture/SegmentedSetEraseSingle_BIG_BINARY_INT64_C8192/134217728          1450 ns         2093 ns       373333
+//***********************************************************************************************************
+//***********************************************************************************************************
+
+
+//***********************************************************************************************************
+// Inserting a sorted range at a specific position, for which we know will not break the container invaraints
+//***********************************************************************************************************
+Fixture/SetInsertSortedUnguarded_INT64/65536/4                                            1040 ns         1144 ns       560000
+Fixture/SetInsertSortedUnguarded_INT64/65536/1024                                       127086 ns       134268 ns         4073
+Fixture/SetInsertSortedUnguarded_INT64/65536/262144                                   41759806 ns     41360294 ns           17
+Fixture/SetInsertSortedUnguarded_INT64/134217728/4                                         782 ns          922 ns      1000000
+Fixture/SetInsertSortedUnguarded_INT64/134217728/1024                                    80936 ns        66961 ns         7467
+Fixture/SetInsertSortedUnguarded_INT64/134217728/262144                               20923009 ns     20996094 ns           32
+Fixture/BtreeSetInsertSortedUnguarded_INT64_C32/65536/4                                    586 ns          563 ns      1000000
+Fixture/BtreeSetInsertSortedUnguarded_INT64_C32/65536/1024                               41160 ns        44468 ns        17920
+Fixture/BtreeSetInsertSortedUnguarded_INT64_C32/65536/262144                          11759032 ns     11666667 ns           75
+Fixture/BtreeSetInsertSortedUnguarded_INT64_C32/134217728/4                                842 ns          872 ns       896000
+Fixture/BtreeSetInsertSortedUnguarded_INT64_C32/134217728/1024                           56583 ns        62500 ns        10000
+Fixture/BtreeSetInsertSortedUnguarded_INT64_C32/134217728/262144                      14075986 ns     12555804 ns           56
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C1024/65536/4                 447 ns          398 ns      1493333
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C1024/65536/1024             1082 ns         1147 ns       640000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C1024/65536/262144         451115 ns       388244 ns         2133
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C1024/134217728/4             678 ns          628 ns       896000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C1024/134217728/1024        24868 ns        26855 ns        32000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C1024/134217728/262144     191278 ns       172631 ns         4073
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C2048/65536/4                 446 ns          504 ns      1672533
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C2048/65536/1024              840 ns          828 ns      1000000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C2048/65536/262144         155744 ns       160079 ns         4978
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C2048/134217728/4             833 ns          921 ns       746667
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C2048/134217728/1024         1279 ns         1256 ns       896000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C2048/134217728/262144     171083 ns       179983 ns         3733
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C4096/65536/4                 417 ns          488 ns      1120000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C4096/65536/1024              695 ns          642 ns      1120000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C4096/65536/262144         147600 ns       138108 ns         4978
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C4096/134217728/4            1241 ns         1147 ns       640000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C4096/134217728/1024         1218 ns         1287 ns       692083
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C4096/134217728/262144    2328791 ns      2309783 ns          345
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C8192/65536/4                 430 ns          419 ns      2312258
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C8192/65536/1024              898 ns          942 ns       746667
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C8192/65536/262144         145011 ns       149972 ns         4480
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C8192/134217728/4            2009 ns         2323 ns       248889
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C8192/134217728/1024         2179 ns         2490 ns       320000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_LINEAR_INT64_C8192/134217728/262144    2416491 ns      1992754 ns          345
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C1024/65536/4                 423 ns          490 ns      1723077
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C1024/65536/1024              969 ns         1088 ns       560000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C1024/65536/262144         219172 ns       188316 ns         2987
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C1024/134217728/4             529 ns          547 ns      1000000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C1024/134217728/1024        23453 ns        27902 ns        22400
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C1024/134217728/262144     180944 ns       185904 ns         3446
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C2048/65536/4                 422 ns          419 ns      2800000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C2048/65536/1024              792 ns          900 ns       746667
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C2048/65536/262144         144629 ns       157286 ns         4073
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C2048/134217728/4             581 ns          670 ns       746667
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C2048/134217728/1024          871 ns          977 ns       640000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C2048/134217728/262144     153146 ns       132533 ns         4480
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C4096/65536/4                 416 ns          410 ns      1600000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C4096/65536/1024              695 ns          698 ns      1120000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C4096/65536/262144         140655 ns       136021 ns         4480
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C4096/134217728/4             694 ns          766 ns      1000000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C4096/134217728/1024          851 ns          872 ns       896000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C4096/134217728/262144    2388032 ns      2380221 ns          407
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C8192/65536/4                 423 ns          516 ns      1000000
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C8192/65536/1024              882 ns          879 ns       746667
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C8192/65536/262144         135686 ns       136021 ns         4480
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C8192/134217728/4             937 ns          753 ns       746667
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C8192/134217728/1024         1208 ns         1235 ns       746667
+Fixture/SegmentedSetInsertSortedUnguarded_SMALL_BINARY_INT64_C8192/134217728/262144    2405764 ns      2343750 ns          280
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C1024/65536/4                   412 ns          614 ns      1120000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C1024/65536/1024                889 ns          808 ns      1102769
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C1024/65536/262144           217190 ns       203321 ns         4073
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C1024/134217728/4               639 ns          625 ns      1000000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C1024/134217728/1024          45141 ns        45776 ns        14336
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C1024/134217728/262144       223764 ns       226025 ns         3733
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C2048/65536/4                   406 ns          441 ns      1947826
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C2048/65536/1024                828 ns          924 ns       896000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C2048/65536/262144           136012 ns       138108 ns         4978
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C2048/134217728/4               803 ns          891 ns      1000000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C2048/134217728/1024           1121 ns         1130 ns       497778
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C2048/134217728/262144       511094 ns       530134 ns         1120
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C4096/65536/4                   410 ns          411 ns      1445161
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C4096/65536/1024                543 ns          476 ns      1543877
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C4096/65536/262144           136039 ns       144043 ns         6400
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C4096/134217728/4              1135 ns         1088 ns       560000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C4096/134217728/1024           1312 ns         1500 ns       448000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C4096/134217728/262144      2469125 ns      2287946 ns          280
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C8192/65536/4                   407 ns          506 ns      1544828
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C8192/65536/1024                536 ns          563 ns      1000000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C8192/65536/262144           129739 ns       133929 ns         5600
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C8192/134217728/4              1980 ns         2148 ns       320000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C8192/134217728/1024           2110 ns         2288 ns       280000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_LINEAR_INT64_C8192/134217728/262144      2472013 ns      2343750 ns          280
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C1024/65536/4                   411 ns          384 ns      1792000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C1024/65536/1024                905 ns          928 ns       640000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C1024/65536/262144           214625 ns       184152 ns         2800
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C1024/134217728/4               526 ns          547 ns      1000000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C1024/134217728/1024          45096 ns        42506 ns        15439
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C1024/134217728/262144       205365 ns       190438 ns         3446
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C2048/65536/4                   410 ns          408 ns      1493333
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C2048/65536/1024                848 ns          753 ns       746667
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C2048/65536/262144           138227 ns       147879 ns         5600
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C2048/134217728/4               573 ns          563 ns      1000000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C2048/134217728/1024            830 ns          858 ns       746667
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C2048/134217728/262144       524066 ns       485437 ns         1545
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C4096/65536/4                   407 ns          462 ns      1792000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C4096/65536/1024                544 ns          563 ns      1000000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C4096/65536/262144           136428 ns       131830 ns         4978
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C4096/134217728/4               689 ns          767 ns       896000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C4096/134217728/1024            852 ns          837 ns       746667
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C4096/134217728/262144      2463735 ns      2099609 ns          320
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C8192/65536/4                   410 ns          433 ns      2488889
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C8192/65536/1024                539 ns          572 ns      1120000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C8192/65536/262144           137506 ns       136719 ns         5600
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C8192/134217728/4               919 ns          872 ns       896000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C8192/134217728/1024           1122 ns         1088 ns       560000
+Fixture/SegmentedSetInsertSortedUnguarded_BIG_BINARY_INT64_C8192/134217728/262144      2488475 ns      2441406 ns          320
+//***********************************************************************************************************
+//***********************************************************************************************************
+
+//***********************************************************************************************************
+// Erasing a range of elements
+//***********************************************************************************************************
+Fixture/SetEraseRange_INT64/65536/4                                             700 ns          854 ns       640000
+Fixture/SetEraseRange_INT64/65536/1024                                        39144 ns        44363 ns        18667
+Fixture/SetEraseRange_INT64/65536/262144                                   22879407 ns     22321429 ns           28
+Fixture/SetEraseRange_INT64/134217728/4                                         536 ns          531 ns      1000000
+Fixture/SetEraseRange_INT64/134217728/1024                                    39825 ns        36133 ns        16000
+Fixture/SetEraseRange_INT64/134217728/262144                               12509000 ns     11997768 ns           56
+Fixture/BtreeSetEraseRange_INT64_C32/65536/4                                    488 ns          410 ns      1600000
+Fixture/BtreeSetEraseRange_INT64_C32/65536/1024                               54529 ns        51563 ns        10000
+Fixture/BtreeSetEraseRange_INT64_C32/65536/262144                          14957717 ns     14481707 ns           41
+Fixture/BtreeSetEraseRange_INT64_C32/134217728/4                                719 ns          670 ns       746667
+Fixture/BtreeSetEraseRange_INT64_C32/134217728/1024                           53302 ns        51758 ns        16000
+Fixture/BtreeSetEraseRange_INT64_C32/134217728/262144                       9747841 ns      9166667 ns           75
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C1024/65536/4                 392 ns          374 ns      1544828
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C1024/65536/1024              701 ns          688 ns      1294865
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C1024/65536/262144         303907 ns       344292 ns         2133
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C1024/134217728/4             390 ns          389 ns      1445161
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C1024/134217728/1024        22978 ns        18415 ns        28000
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C1024/134217728/262144      34394 ns        30762 ns        24889
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C2048/65536/4                 389 ns          490 ns      1723077
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C2048/65536/1024              391 ns          389 ns      1445161
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C2048/65536/262144          23672 ns        22949 ns        32000
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C2048/134217728/4             394 ns          441 ns      1947826
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C2048/134217728/1024          401 ns          384 ns      1792000
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C2048/134217728/262144      27112 ns        24309 ns        26353
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C4096/65536/4                 390 ns          308 ns      2488889
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C4096/65536/1024              397 ns          411 ns      1672533
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C4096/65536/262144          18417 ns        16497 ns        40727
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C4096/134217728/4             392 ns          394 ns      1544828
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C4096/134217728/1024          398 ns          367 ns      1659259
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C4096/134217728/262144    1546024 ns      1662902 ns          498
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C8192/65536/4                 390 ns          353 ns      2036364
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C8192/65536/1024              393 ns          460 ns      1120000
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C8192/65536/262144          12974 ns        11475 ns        64000
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C8192/134217728/4             393 ns          385 ns      1866667
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C8192/134217728/1024          399 ns          423 ns      2181565
+Fixture/SegmentedSetEraseRange_SMALL_LINEAR_INT64_C8192/134217728/262144    1354649 ns      1255020 ns          747
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C1024/65536/4                 388 ns          346 ns      1445161
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C1024/65536/1024              691 ns          732 ns       896000
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C1024/65536/262144          85522 ns        71498 ns         8960
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C1024/134217728/4             394 ns          435 ns      1723077
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C1024/134217728/1024        22878 ns        20647 ns        56000
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C1024/134217728/262144      34728 ns        38608 ns        16593
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C2048/65536/4                 392 ns          531 ns      1000000
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C2048/65536/1024              391 ns          376 ns      1454377
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C2048/65536/262144          22019 ns        20777 ns        66931
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C2048/134217728/4             395 ns          345 ns      1723077
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C2048/134217728/1024          403 ns          516 ns      1000000
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C2048/134217728/262144      27870 ns        28460 ns        26353
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C4096/65536/4                 390 ns          437 ns      1929846
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C4096/65536/1024              395 ns          433 ns      1659259
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C4096/65536/262144          19578 ns        19531 ns        44800
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C4096/134217728/4             391 ns          414 ns      1659259
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C4096/134217728/1024          392 ns          372 ns      1723077
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C4096/134217728/262144    1529138 ns      1499721 ns          448
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C8192/65536/4                 389 ns          399 ns      1723077
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C8192/65536/1024              396 ns          471 ns      1792000
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C8192/65536/262144          12940 ns        13044 ns        40727
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C8192/134217728/4             391 ns          401 ns      1792000
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C8192/134217728/1024          398 ns          342 ns      2240000
+Fixture/SegmentedSetEraseRange_SMALL_BINARY_INT64_C8192/134217728/262144    1378682 ns      1540143 ns          629
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C1024/65536/4                   386 ns          443 ns      1659259
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C1024/65536/1024                643 ns          586 ns      1120000
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C1024/65536/262144            84187 ns        76730 ns        11200
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C1024/134217728/4               388 ns          352 ns      2133333
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C1024/134217728/1024          46291 ns        51618 ns        11200
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C1024/134217728/262144        60405 ns        51618 ns        11200
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C2048/65536/4                   389 ns          452 ns      1659259
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C2048/65536/1024                391 ns          387 ns      1493333
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C2048/65536/262144            22864 ns        19617 ns        27877
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C2048/134217728/4               386 ns          417 ns      1723077
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C2048/134217728/1024            393 ns          344 ns      2859031
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C2048/134217728/262144       132204 ns       117182 ns         7467
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C4096/65536/4                   385 ns          363 ns      1723077
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C4096/65536/1024                390 ns          370 ns      2112674
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C4096/65536/262144            19538 ns        20020 ns        32000
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C4096/134217728/4               387 ns          433 ns      1947826
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C4096/134217728/1024            396 ns          377 ns      1947826
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C4096/134217728/262144      1546827 ns      1440430 ns          640
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C8192/65536/4                   388 ns          385 ns      1866667
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C8192/65536/1024                392 ns          345 ns      1947826
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C8192/65536/262144            12892 ns        11091 ns        74667
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C8192/134217728/4               389 ns          391 ns      1600000
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C8192/134217728/1024            391 ns          433 ns      1659259
+Fixture/SegmentedSetEraseRange_BIG_LINEAR_INT64_C8192/134217728/262144      1398407 ns      1317771 ns          498
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C1024/65536/4                   385 ns          364 ns      1544828
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C1024/65536/1024                650 ns          625 ns      1000000
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C1024/65536/262144            86904 ns        78125 ns         6400
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C1024/134217728/4               389 ns          393 ns      1947826
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C1024/134217728/1024          46158 ns        47084 ns        17920
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C1024/134217728/262144        59753 ns        75331 ns         7467
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C2048/65536/4                   386 ns          439 ns      2240000
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C2048/65536/1024                392 ns          306 ns      2090667
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C2048/65536/262144            21248 ns        21798 ns        57344
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C2048/134217728/4               390 ns          400 ns      1600000
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C2048/134217728/1024            399 ns          444 ns      2007040
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C2048/134217728/262144       131899 ns       138126 ns         3733
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C4096/65536/4                   388 ns          345 ns      2036364
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C4096/65536/1024                394 ns          430 ns      1600000
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C4096/65536/262144            19246 ns        20494 ns        49557
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C4096/134217728/4               390 ns          417 ns      1947826
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C4096/134217728/1024            394 ns          339 ns      1659259
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C4096/134217728/262144      1522109 ns      1474649 ns          498
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C8192/65536/4                   387 ns          345 ns      2036364
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C8192/65536/1024                392 ns          408 ns      2488889
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C8192/65536/262144            13222 ns        13253 ns        44800
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C8192/134217728/4               390 ns          430 ns      1600000
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C8192/134217728/1024            394 ns          344 ns      1544828
+Fixture/SegmentedSetEraseRange_BIG_BINARY_INT64_C8192/134217728/262144      1371414 ns      1227679 ns          560
+//***********************************************************************************************************
+//***********************************************************************************************************
