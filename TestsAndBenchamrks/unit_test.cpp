@@ -134,15 +134,15 @@ struct allocator : allocator_base
 #endif
 
 #ifdef BIG_HEADER
-using vector = seg::vector_big_header<value_type, capacity, allocator>;
+using segmented_list = seg::list_big_header<value_type, capacity, allocator>;
 #else
-using vector = seg::vector_small_header<value_type, capacity, allocator>;
+using segmented_list = seg::list_small_header<value_type, capacity, allocator>;
 #endif
 
-using index = typename vector::index;
+using index = typename segmented_list::index;
 using header_iterator = Iterator<index>;
 using const_header_iterator = ConstIterator<index>;
-using multiset = seg::multiset_tmp<value_type, std::less<value_type>, vector, flat::find_adaptor_linear, flat::equal_range_adaptor_linear>;
+using multiset = seg::multiset_tmp<value_type, std::less<value_type>, segmented_list, flat::find_adaptor_linear, flat::equal_range_adaptor_linear>;
 using const_segmented_coordinate = typename multiset::const_segmented_coordinate;
 using segmented_coordinate = typename multiset::segmented_coordinate;
 using segment_iterator = typename segmented_coordinate::segment_iterator;
@@ -192,9 +192,9 @@ std::tuple<size_t, size_t, size_t> rand_n0en1(size_t n) {
 }
 
 void destroy_index(index& in) {
-	segment_iterator first_seg(in.begin());
-	segment_iterator last_seg(in.end());
-	seg::destruct(first_seg, std::begin(first_seg), last_seg, std::begin(last_seg));
+	segment_iterator fseg(in.begin());
+	segment_iterator lseg(in.end());
+	seg::destruct(fseg, std::begin(fseg), lseg, std::begin(lseg));
 	in.erase(in.begin(), in.end());
 }
 
@@ -214,15 +214,15 @@ void check_equal(const T0& s0, const T1& s1, const char* message_smaller, const 
 	ASSERT_GE(static_cast<T2>(s0), static_cast<T2>(s1)) << message_smaller;
 }
 
-size_t create_rand_range(header_iterator first_seg, size_t n) {
+size_t create_rand_range(header_iterator fseg, size_t n) {
 	size_t final_size = 0;
 	int i = 0;
 	while (n) {
-		size_t s = rand(seg::limit(*first_seg), seg::capacity(*first_seg));
-		size_t f = rand(seg::capacity(*first_seg) - s);
-		seg::set_begin_index(*first_seg, f);
-		seg::set_end_index(*first_seg, f + s);
-		value_type * first = seg::begin(*first_seg);
+		size_t s = rand(seg::limit(*fseg), seg::capacity(*fseg));
+		size_t f = rand(seg::capacity(*fseg) - s);
+		seg::set_begin_index(*fseg, f);
+		seg::set_end_index(*fseg, f + s);
+		value_type * first = seg::begin(*fseg);
 		final_size = final_size + s;
 		while (s) {
 			construct_at(first, i);
@@ -230,7 +230,7 @@ size_t create_rand_range(header_iterator first_seg, size_t n) {
 			++first;
 			--s;
 		}
-		++first_seg;
+		++fseg;
 		--n;
 	}
 	return final_size;
@@ -1133,10 +1133,10 @@ struct TestSegmentInsert : public TestSegmentRangeBase
 		header_iterator first_balance,
 		header_iterator last_balance) {
 
-		segment_iterator first_seg = segment_iterator(r.first.first);
-		segmented_coordinate first(first_seg, std::begin(first_seg) + r.first.second);
-		segment_iterator last_seg = segment_iterator(r.second.first);
-		segmented_coordinate last(last_seg, std::begin(last_seg) + r.second.second);
+		segment_iterator fseg = segment_iterator(r.first.first);
+		segmented_coordinate first(fseg, std::begin(fseg) + r.first.second);
+		segment_iterator lseg = segment_iterator(r.second.first);
+		segmented_coordinate last(lseg, std::begin(lseg) + r.second.second);
 
 		TestRangeInsertedCorrectly(first, last, insert_nm, first_balance, last_balance);
 	}
