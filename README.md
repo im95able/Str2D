@@ -286,7 +286,7 @@ You'll need a c++17 compiler.
 Place all files inside Str2D directory of this repository, into a directory of your choice. Include str2d.h header file and you're ready to go.
 
 # Conclusion
-In a sense, the segmented list extends the application area of the "flat" vector so it can be used as a set or as a container where insertion order matters, for a large number of elements. As benchmarks show, that extension has limits which have to be taken into account. 
+In a sense, the segmented list greatly extends the application area of the `std::list` so it can be used as a set or as a container where insertion order matters, for a large number of elements. As benchmarks show, that extension has limits which have to be taken into account. 
 
 Google's btree is probably a safe bet as a drop in replacement for the `std::map` and `std::map` data structures. If on the other hand iterations dominate other operations, or you're constantly erasing and inserting more than one element, you could consider using the segmented list.
 
