@@ -19,7 +19,7 @@ Each segment holds at least half the capacity(`limit`) elements on it, except th
 Objects stored in `str2d::seg::multiset` and `str2d::seg::multimap` are all mutable. For `str2d::seg::multiset`, I could have made the objects constant while the user is manipulating them and mutable when they're used internally; I couldn't do the same for `str2d::seg::multimap`, so I decided to leave them mutable for both data structures. The user will have to take care not to mess up the invariants. On the other hand, this will prove useful when we want to bypass some unnecessary checks.
 
 ## Coordinate Structures/Iterators
-Formal definitions of concepts used in this library can be found [here](https://www.dropbox.com/s/hc042pm8kkhgj70/11nBMv.pdf?dl=0).
+Formal definitions of concepts used in this library can be found [here](https://www.dropbox.com/s/nqqwbbnu1x6royj/str2d_concepts_and_definitions.pdf?dl=0).
 
 Segmented list utilizes 3 kinds of coordinate structures : 
 1) SegmentIterator - random access iterator that iterates over a range of segments. It can't be dereferenced like ordinary
