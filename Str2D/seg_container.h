@@ -1916,7 +1916,7 @@ public:
 		return seg::lower_bound(it, end(), k, cmp, find_adaptor());
 	}
 	segmented_coordinate lower_bound(const_segmented_coordinate it, const key_type& k) {
-		return seg::lower_bound(listtor::coordinate_from_const(it), end(), k, cmp, find_adaptor());
+		return seg::lower_bound(segmented_list::coordinate_from_const(it), end(), k, cmp, find_adaptor());
 	}
 	const_segmented_coordinate lower_bound(const_segmented_coordinate it, const key_type& k) const {
 		return seg::lower_bound(it, cend(), k, cmp, find_adaptor());
@@ -1926,7 +1926,7 @@ public:
 		return seg::upper_bound(it, end(), k, cmp, find_adaptor());
 	}
 	segmented_coordinate upper_bound(const_segmented_coordinate it, const key_type& k) {
-		return seg::upper_bound(listtor::coordinate_from_const(it), end(), k, cmp, find_adaptor());
+		return seg::upper_bound(segmented_list::coordinate_from_const(it), end(), k, cmp, find_adaptor());
 	}
 	const_segmented_coordinate upper_bound(const_segmented_coordinate it, const key_type& k) const {
 		return seg::upper_bound(it, cend(), k, cmp, find_adaptor());
@@ -1936,7 +1936,7 @@ public:
 		return seg::equal_range(it, end(), k, cmp, find_adaptor());
 	}
 	std::pair<segmented_coordinate, segmented_coordinate> equal_range(const_segmented_coordinate it, const key_type& k) {
-		return seg::equal_range(listtor::coordinate_from_const(it), end(), k, cmp, find_adaptor());
+		return seg::equal_range(segmented_list::coordinate_from_const(it), end(), k, cmp, find_adaptor());
 	}
 	std::pair<const_segmented_coordinate, const_segmented_coordinate> equal_range(const_segmented_coordinate it, const key_type& k) const {
 		return seg::equal_range(it, cend(), k, cmp, find_adaptor());
