@@ -262,7 +262,7 @@ Note : If anyone is willing(and unlike me, able) to the statistical calculations
 
 # Exception Safety
 I didn't know of a way to implement exception safety so that there's always basic exception guarantee, without losing efficiency.
-Basically if the type we're storing is POD(Plain Old Data), all segmented list operations have basic exception guarantee.
+Basically, if the type we're storing is POD(Plain Old Data), all segmented list operations have at least basic exception guarantee.
 
 ## Erasure
 If the object type we're storing has a move constructor or a copy constructor which don't throw, we have basic exception guarantee; otherwise no guarantee is given.
@@ -286,7 +286,7 @@ Place all files inside Str2D directory of this repository, into a directory of y
 # Conclusion
 In a sense, the segmented list greatly extends the application area of the `std::list` so it can be used as a set or as a container where insertion order matters, for a large number of elements. As benchmarks show, that extension has limits which have to be taken into account. 
 
-Google's btree is probably a safe bet as a drop in replacement for the `std::set` and `std::multiset` data structures. If on the other hand iterations dominate other operations, or you're constantly erasing and inserting more than one element, you could consider using the segmented list.
+Google's btree is probably a safe bet as a drop in replacement for the `std::set` and `std::multiset` data structures. If on the other hand iterations dominate over other operations, or you're constantly erasing and inserting more than one element, you could consider using the segmented list.
 
 Needless to say, these opinions mean little in comparison to actual benchmarks of your code.
 
