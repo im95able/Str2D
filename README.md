@@ -4,7 +4,7 @@ Str2D is a library of 2D algorithms and data structures implemented in c++17 des
 While reading two books, `Elements of Programming`(which now you can read for [free](http://componentsprogramming.com/elements-of-programming-authors-edition/)) and `From mathematics to generic programming`, I stumbled upon a coordinate structure called the SegmentIterator and realised I could implement it together with data structures and algorithms needed for its use.  
 The second motivation was [this](https://www.google.com/url?sa=t&source=web&rct=j&url=https://people.freebsd.org/~lstewart/articles/cpumemory.pdf&ved=2ahUKEwirjajuv57jAhVrxKYKHbfvDV4QFjAAegQIAhAB&usg=AOvVaw3VY2lnCBaI-B57Dric65cb) paper, which explained to me the inadequacy of data structures which utilize numerous single node allocations(e.g. `std::set` and the like).
 
-The goal was to implement a `set`-like data structure which would allow the processor to utilize its prefetcher and, most of the time, not get a cache miss while iterating; but would at the same time have reasonable, lookup, insert and erase time.   
+The goal was to implement a `set`-like data structure which would allow the processor to utilize its prefetcher and, most of the time, not get a cache miss while iterating; but would at the same time have reasonable, lookup, insert and erase times.   
 
 At the heart of the library lies a data structure called `str2d::seg::list`, the rest are build on top of it; hence this guide will mainly focus on it and somewhat on `str2d::seg::set`(`str2d::seg::map` is exluded beacuse it's functionally almost indentical to `str2d::seg::set`). Once you've understood how the segmented list is implemented you'll easily deduce how to use it to implement `set`-like and `map`-like data structures.
 
