@@ -292,4 +292,4 @@ Needless to say, these opinions mean little in comparison to actual benchmarks o
 
 This library is begging to be expanded with more data structures, algorithms and different implementations of all concepts inside of it, just as this Readme could be expanded with more tests and deeper explainantions(time didn't allow me to add everything I wanted in both the library and this document; hopefully in the future I'll find some time). If you want to do any of that, feel free to do it.
 
-![SegmentedList](https://user-images.githubusercontent.com/16592464/69705518-0891e600-10f6-11ea-985e-af636ca773f8.png)
+![SegmentedList](https://user-images.githubusercontent.com/16592464/69705932-db920300-10f6-11ea-95db-f020897cec0e.png)
