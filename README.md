@@ -14,6 +14,8 @@ Note : There are currently only `str2d::seg::multiset` and `str2d::seg::multimap
 Segmented list is not a difficult structure to imagine. In it, an `std::vector` is used as an index which holds segment headers, structures holding pointers to segments of memory and possibly some meta data(detailed explaination of segment headers will be given bellow). Those segments are where the data is actually held. The capacity of every segment is constant; the size on the other hand can vary.
 Each segment holds at least half the capacity(`limit`) elements on it, except the first one; it can hold as many(less than capacity) or as little(more than 0) as it needs.
 
+![SegmentedList](https://user-images.githubusercontent.com/16592464/69705932-db920300-10f6-11ea-95db-f020897cec0e.png)
+
 Objects stored in `str2d::seg::multiset` and `str2d::seg::multimap` are all mutable. For `str2d::seg::multiset`, I could have made the objects constant while the user is manipulating them and mutable when they're used internally; I couldn't do the same for `str2d::seg::multimap`, so I decided to leave them mutable for both data structures. The user will have to take care not to mess up the invariants. On the other hand, this will prove useful when we want to bypass some unnecessary checks.
 
 ## Coordinate Structures/Iterators
@@ -291,5 +293,3 @@ Google's btree is probably a safe bet as a drop in replacement for the `std::set
 Needless to say, these opinions mean little in comparison to actual benchmarks of your code.
 
 This library is begging to be expanded with more data structures, algorithms and different implementations of all concepts inside of it, just as this Readme could be expanded with more tests and deeper explainantions(time didn't allow me to add everything I wanted in both the library and this document; hopefully in the future I'll find some time). If you want to do any of that, feel free to do it.
-
-![SegmentedList](https://user-images.githubusercontent.com/16592464/69705932-db920300-10f6-11ea-95db-f020897cec0e.png)
