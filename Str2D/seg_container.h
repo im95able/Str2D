@@ -1524,7 +1524,7 @@ public:
 	}
 	list_tmp& operator=(const list_tmp& other) {
 		clear();
-		copy_from();
+		copy_from(other);
 		return *this;
 	}
 
